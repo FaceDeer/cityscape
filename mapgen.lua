@@ -19,6 +19,7 @@ local nodes = {
 	-- Ground nodes
 	{"stone", "default:stone"},
 	{"glass", "default:glass"},
+	{"plate_glass", "cityscape:silver_glass"},
 	{"obsidian", "default:obsidian"},
 	{"dirt", "default:dirt"},
 	{"dirt_with_grass", "default:dirt_with_grass"},
@@ -184,7 +185,7 @@ function cityscape.generate(minp, maxp, seed)
 									elseif pz % math.floor(rz / 3) == 5 and y <= avg + 2 then
 										data[ivm] = node["air"]
 									else
-										data[ivm] = node["glass"]
+										data[ivm] = node["plate_glass"]
 									end
 								elseif pz % rz <= 6 or pz % rz >= rz - 1 then
 									if px % math.floor(rx / 3) == 2 then
@@ -192,7 +193,7 @@ function cityscape.generate(minp, maxp, seed)
 									elseif px % math.floor(rx / 3) == 5 and y <= avg + 2 then
 										data[ivm] = node["air"]
 									else
-										data[ivm] = node["glass"]
+										data[ivm] = node["plate_glass"]
 									end
 								else
 									data[ivm] = node["air"]
@@ -215,5 +216,12 @@ function cityscape.generate(minp, maxp, seed)
 		vm:calc_lighting()
 		vm:update_liquids()
 		vm:write_to_map()
+	end
+
+	-- Deal with memory issues. This, of course, is supposed to be automatic.
+	local mem = math.floor(collectgarbage("count")/1024)
+	if mem > 500 then
+		print("Cityscape is manually collecting garbage as memory use has exceeded 500K.")
+		collectgarbage("collect")
 	end
 end
