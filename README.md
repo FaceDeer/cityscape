@@ -5,4 +5,4 @@ This mod makes very rudimentary city blocks. It's more of an experiment than any
 
 In the future, I hope to make the streets connect properly between chunks and put some stairs and possibly walls inside the buildings.
 
-![screenshot]()
+![screenshot](https://github.com/duane-r/cityscape/raw/master/textures/screenshot01.jpg)
