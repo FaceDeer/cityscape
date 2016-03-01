@@ -76,15 +76,14 @@ function cityscape.generate(minp, maxp, seed)
 	local count = 0
 	local min = 31000
 	local max = -31000
-	local outs_up = 0
-	local outs_down = 0
 	for z = minp.z, maxp.z do
 		for x = minp.x, maxp.x do
 			index = index + 1
-			if heightmap[index] > maxp.y then
-				outs_up = outs_up + 1
-			elseif heightmap[index] < minp.y then
-				outs_down = outs_down + 1
+			-- Terrain going through minp.y or maxp.y causes problems,
+			-- since there's no practical way to tell if you're above
+			-- or below a city block.
+			if heightmap[index] > maxp.y or heightmap[index] < minp.y then
+				return
 			end
 
 			if heightmap[index] < min then
@@ -93,26 +92,26 @@ function cityscape.generate(minp, maxp, seed)
 			if heightmap[index] > max then
 				max = heightmap[index]
 			end
-			if max - min > 20 or min < 1 then
-				return
-			end
 
 			avg = avg + heightmap[index]
 			count = count + 1
 		end
 	end
 
+	-- Avoid steep terrain.
+	if max - min > 20 or min < 1 then
+		return
+	end
+
+	-- If the average ground level is too high, there won't
+	-- be enough room for any buildings.
 	avg = math.floor(avg / count + 0.5)
 	if avg > minp.y + 67 then
 		return
 	end
 
-	local airy = outs_down > 0 and outs_up + outs_down < csize.x * csize.z
-	local earthy = outs_up > 0 and outs_up + outs_down < csize.x * csize.z
-	local urban = outs_up + outs_down < csize.x * csize.z / 2
-	local centered = avg >= minp.y and avg <= maxp.y
-	local streetw = 5
-	local sidewalk = 2
+	local streetw = 5    -- street width
+	local sidewalk = 2   -- sidewalk width
 
 	local bh = {}
 	for i = 1,3 do
@@ -131,47 +130,41 @@ function cityscape.generate(minp, maxp, seed)
 			for x = minp.x, maxp.x do
 				local ivm = a:index(x, minp.y, z)
 				for y = minp.y, maxp.y do
-					if airy and urban and not centered then
-						data[ivm] = node["air"]
-					elseif earthy and urban and not centered then
-						data[ivm] = node["stone"]
-					elseif centered then
-						local px = x - minp.x + 1
-						local pz = z - minp.z + 1
+					local px = x - minp.x + 1
+					local pz = z - minp.z + 1
 
-						if y < avg then
+					if y < avg then
+						data[ivm] = node["stone"]
+					elseif y == avg and ((px % rx) <= streetw or (pz % rz) <= streetw) then
+						data[ivm] = node["obsidian"]
+					elseif y == avg then
+						data[ivm] = node["stone"]
+					elseif ((px % rx) > streetw + sidewalk and (pz % rz) > streetw + sidewalk and (px % rx) < rx - sidewalk and (pz % rz) < rz - sidewalk) and y <= bh[math.ceil(px / rx)][math.ceil(pz / rz)] then
+						if (y - avg) % 4 == 0 then
 							data[ivm] = node["stone"]
-						elseif y == avg and ((px % rx) <= streetw or (pz % rz) <= streetw) then
-							data[ivm] = node["obsidian"]
-						elseif y == avg then
-							data[ivm] = node["stone"]
-						elseif ((px % rx) > streetw + sidewalk and (pz % rz) > streetw + sidewalk and (px % rx) < rx - sidewalk and (pz % rz) < rz - sidewalk) and y <= bh[math.ceil(px / rx)][math.ceil(pz / rz)] then
-							if (y - avg) % 4 == 0 then
-								data[ivm] = node["stone"]
-							else
-								if px % rx <= streetw + sidewalk + 1 or px % rx >= rx - (sidewalk + 1) then
-									if pz % math.floor(rz / 3) == 2 then
-										data[ivm] = node["stone"]
-									elseif pz % math.floor(rz / 3) == 5 and y <= avg + 2 then
-										data[ivm] = node["air"]
-									else
-										data[ivm] = node["plate_glass"]
-									end
-								elseif pz % rz <= streetw + sidewalk + 1 or pz % rz >= rz - (sidewalk + 1) then
-									if px % math.floor(rx / 3) == 2 then
-										data[ivm] = node["stone"]
-									elseif px % math.floor(rx / 3) == 5 and y <= avg + 2 then
-										data[ivm] = node["air"]
-									else
-										data[ivm] = node["plate_glass"]
-									end
-								else
-									data[ivm] = node["air"]
-								end
-							end
 						else
-							data[ivm] = node["air"]
+							if px % rx <= streetw + sidewalk + 1 or px % rx >= rx - (sidewalk + 1) then
+								if pz % math.floor(rz / 3) == 2 then
+									data[ivm] = node["stone"]
+								elseif pz % math.floor(rz / 3) == 5 and y <= avg + 2 then
+									data[ivm] = node["air"]
+								else
+									data[ivm] = node["plate_glass"]
+								end
+							elseif pz % rz <= streetw + sidewalk + 1 or pz % rz >= rz - (sidewalk + 1) then
+								if px % math.floor(rx / 3) == 2 then
+									data[ivm] = node["stone"]
+								elseif px % math.floor(rx / 3) == 5 and y <= avg + 2 then
+									data[ivm] = node["air"]
+								else
+									data[ivm] = node["plate_glass"]
+								end
+							else
+								data[ivm] = node["air"]
+							end
 						end
+					else
+						data[ivm] = node["air"]
 					end
 					ivm = ivm + a.ystride
 				end
