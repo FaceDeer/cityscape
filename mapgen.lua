@@ -26,6 +26,9 @@ local nodes = {
 	{"stone", "default:stone"},
 	{"glass", "default:glass"},
 	{"plate_glass", "cityscape:silver_glass"},
+	{"stair_road", "stairs:stair_road"},
+	{"stair_pine", "stairs:stair_pine_wood"},
+	{"stair_wood", "stairs:stair_wood"},
 	{"road", "cityscape:road"},
 	{"dirt", "default:dirt"},
 	{"dirt_with_grass", "default:dirt_with_grass"},
@@ -63,6 +66,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
 	local data = vm:get_data()
+	local p2data = vm:get_param2_data()
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
 
@@ -144,15 +148,12 @@ function cityscape.generate(minp, maxp, seed)
 			if data[ivm_xn] == node["road"] then
 				avg_xn = y
 			end
-
 			if data[ivm_xp] == node["road"] then
 				avg_xp = y
 			end
-
 			if data[ivm_zn] == node["road"] then
 				avg_zn = y
 			end
-
 			if data[ivm_zp] == node["road"] then
 				avg_zp = y
 			end
@@ -178,17 +179,26 @@ function cityscape.generate(minp, maxp, seed)
 				local wall_z = pz == streetw + sidewalk or pz == math.floor(rz) - (sidewalk + 1)
 
 				street_avg = avg
+				local dir = 0
 				if math.abs(avg - avg_xn) > math.abs(x - minp.x) then
 					street_avg = avg_xn + ((avg - avg_xn) / math.abs(avg - avg_xn)) * math.abs(x - minp.x)
+					dir = 3
+					diro = 1
 				end
 				if math.abs(avg - avg_zn) > math.abs(z - minp.z) then
 					street_avg = avg_zn + ((avg - avg_zn) / math.abs(avg - avg_zn)) * math.abs(z - minp.z)
+					dir = 4
+					diro = 0
 				end
 				if math.abs(avg - avg_xp) > math.abs(maxp.x - x) then
 					street_avg = avg_xp + ((avg - avg_xp) / math.abs(avg - avg_xp)) * math.abs(maxp.x - x)
+					dir = 1
+					diro = 3
 				end
 				if math.abs(avg - avg_zp) > math.abs(maxp.z - z) then
 					street_avg = avg_zp + ((avg - avg_zp) / math.abs(avg - avg_zp)) * math.abs(maxp.z - z)
+					dir = 0
+					diro = 4
 				end
 				--if math.abs(street_avg - avg) > 10 then
 				--	print("*** street_avg = "..street_avg.." at ("..x..","..z..")")
@@ -196,8 +206,16 @@ function cityscape.generate(minp, maxp, seed)
 				--end
 
 				for y = minp.y, maxp.y do
-					if y == street_avg and ramp then
+					if y == street_avg and ramp and street_avg == avg then
 						data[ivm] = node["road"]
+					elseif y == street_avg + 1 and ramp and street_avg < avg then
+						data[ivm] = node["stair_road"]
+						p2data[ivm] = diro
+						--print("("..x..","..z..") s < a "..dir)
+					elseif y == street_avg and ramp and street_avg > avg then
+						data[ivm] = node["stair_road"]
+						p2data[ivm] = dir
+						--print("("..x..","..z..") s > a "..dir)
 					elseif y < street_avg and ramp then
 						data[ivm] = node["stone"]
 					elseif y == avg and street and not ramp then
@@ -242,6 +260,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	if write then
 		vm:set_data(data)
+		vm:set_param2_data(p2data)
 		--vm:set_lighting({day = 0, night = 0})
 		vm:calc_lighting()
 		vm:update_liquids()

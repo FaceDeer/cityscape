@@ -25,3 +25,9 @@ minetest.register_node("cityscape:road", {
 	groups = {cracky = 1, level = 1},
 })
 
+stairs.register_stair_and_slab("road", "cityscape:road",
+	{cracky = 1, level = 1},
+	{"default_obsidian.png"},
+	"Ramp",
+	"Tarmac",
+	default.node_sound_stone_defaults())
