@@ -18,3 +18,10 @@ minetest.register_node("cityscape:silver_glass", {
 	sounds = default.node_sound_stone_defaults(),
 })
 
+minetest.register_node("cityscape:road", {
+	description = "Road",
+	tiles = {"default_obsidian.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1},
+})
+
