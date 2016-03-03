@@ -31,3 +31,12 @@ stairs.register_stair_and_slab("road", "cityscape:road",
 	"Ramp",
 	"Tarmac",
 	default.node_sound_stone_defaults())
+
+default.register_fence("cityscape:fence_steel", {
+	description = "Saftey Rail",
+	texture = "default_steel_block.png",
+	material = "default:steel",
+	groups = {cracky = 1, level = 2},
+	sounds = default.node_sound_stone_defaults(),
+})
+

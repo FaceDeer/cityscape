@@ -25,6 +25,7 @@ local nodes = {
 	-- Ground nodes
 	{"stone", "default:stone"},
 	{"glass", "default:glass"},
+	{"fence", "cityscape:fence_steel"},
 	{"plate_glass", "cityscape:silver_glass"},
 	{"stair_road", "stairs:stair_road"},
 	{"stair_pine", "stairs:stair_pine_wood"},
@@ -136,9 +137,10 @@ function cityscape.generate(minp, maxp, seed)
 	local rz = csize.z / 3
 
 	if true then
-		local px, pz, qx, qz, ivm, street_avg
+		local px, pz, qx, qz, ivm, street_avg, dir, diro
 		local avg_xn, avg_xp, avg_zn, avg_zp = avg, avg, avg, avg
 		local ivm_xn, ivm_xp, ivm_zn, ivm_zp
+		local street, ramp, develop, wall_x, wall_z
 
 		ivm_xn = a:index(minp.x - 1, minp.y, math.floor(minp.z + rz + 1))
 		ivm_xp = a:index(maxp.x + 1, minp.y, math.floor(minp.z + rz + 1))
@@ -163,7 +165,6 @@ function cityscape.generate(minp, maxp, seed)
 			ivm_zn = ivm_zn + a.ystride
 			ivm_zp = ivm_zp + a.ystride
 		end
-		--print("avg (xn,xp,zn,xp): "..dump(avg_xn)..","..dump(avg_xp)..","..dump(avg_zn)..","..dump(avg_zp)..", at ("..minp.x..","..minp.z..")")
 		
 		for z = minp.z, maxp.z do
 			for x = minp.x, maxp.x do
@@ -172,14 +173,14 @@ function cityscape.generate(minp, maxp, seed)
 				pz = math.floor((z - minp.z) % rz)
 				qx = math.ceil((x - minp.x + 1) / rx)
 				qz = math.ceil((z - minp.z + 1) / rz)
-				local street = px < streetw or pz < streetw
-				local ramp = (px < streetw and (qx == 2 or qx == 3)) or (pz < streetw and (qz == 2 or qz == 3))
-				local develop = px >= streetw + sidewalk and pz >= streetw + sidewalk and px < math.floor(rx) - sidewalk and pz < math.floor(rz) - sidewalk
-				local wall_x = px == streetw + sidewalk or px == math.floor(rx) - (sidewalk + 1)
-				local wall_z = pz == streetw + sidewalk or pz == math.floor(rz) - (sidewalk + 1)
+				street = px < streetw or pz < streetw
+				ramp = (px < streetw and (qx == 2 or qx == 3)) or (pz < streetw and (qz == 2 or qz == 3))
+				develop = px >= streetw + sidewalk and pz >= streetw + sidewalk and px < math.floor(rx) - sidewalk and pz < math.floor(rz) - sidewalk
+				wall_x = px == streetw + sidewalk or px == math.floor(rx) - (sidewalk + 1)
+				wall_z = pz == streetw + sidewalk or pz == math.floor(rz) - (sidewalk + 1)
 
 				street_avg = avg
-				local dir = 0
+				dir = 0
 				if math.abs(avg - avg_xn) > math.abs(x - minp.x) then
 					street_avg = avg_xn + ((avg - avg_xn) / math.abs(avg - avg_xn)) * math.abs(x - minp.x)
 					dir = 3
@@ -206,17 +207,19 @@ function cityscape.generate(minp, maxp, seed)
 				--end
 
 				for y = minp.y, maxp.y do
-					if y == street_avg and ramp and street_avg == avg then
-						data[ivm] = node["road"]
-					elseif y == street_avg + 1 and ramp and street_avg < avg then
+					if y == street_avg + 1 and ramp and street_avg < avg then
+						-- ramp down
 						data[ivm] = node["stair_road"]
 						p2data[ivm] = diro
-						--print("("..x..","..z..") s < a "..dir)
 					elseif y == street_avg and ramp and street_avg > avg then
+						-- ramp up
 						data[ivm] = node["stair_road"]
 						p2data[ivm] = dir
-						--print("("..x..","..z..") s > a "..dir)
+					elseif y == street_avg and ramp then
+						-- ramp normal
+						data[ivm] = node["road"]
 					elseif y < street_avg and ramp then
+						-- ramp support
 						data[ivm] = node["stone"]
 					elseif y == avg and street and not ramp then
 						data[ivm] = node["road"]
@@ -248,6 +251,23 @@ function cityscape.generate(minp, maxp, seed)
 								data[ivm] = node["air"]
 							end
 						end
+					-- Place barriers.
+					elseif not ramp and x == minp.x and y == avg + 1 and street_avg < avg then
+						data[ivm] = node["fence"]
+					elseif not ramp and x == minp.x and y == avg + 1 and street_avg > avg and street_avg - avg < 16 then
+						data[ivm + a.ystride * (street_avg - avg) - 1] = node["fence"]
+					elseif not ramp and x == maxp.x and y == avg + 1 and street_avg < avg then
+						data[ivm] = node["fence"]
+					elseif not ramp and x == maxp.x and y == avg + 1 and street_avg > avg and street_avg - avg < 16 then
+						data[ivm + a.ystride * (street_avg - avg) + 1] = node["fence"]
+					elseif not ramp and z == minp.z and y == avg + 1 and street_avg < avg then
+						data[ivm] = node["fence"]
+					elseif not ramp and z == minp.z and y == avg + 1 and street_avg > avg and street_avg - avg < 16 then
+						data[ivm + a.ystride * (street_avg - avg) - a.zstride] = node["fence"]
+					elseif not ramp and z == maxp.z and y == avg + 1 and street_avg < avg then
+						data[ivm] = node["fence"]
+					elseif not ramp and z == maxp.z and y == avg + 1 and street_avg > avg and street_avg - avg < 16 then
+						data[ivm + a.ystride * (street_avg - avg) + a.zstride] = node["fence"]
 					else
 						data[ivm] = node["air"]
 					end
