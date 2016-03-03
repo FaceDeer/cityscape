@@ -137,8 +137,10 @@ function cityscape.generate(minp, maxp, seed)
 		end
 	end
 
-	local rx = csize.x / 3
-	local rz = csize.z / 3
+	local rx = math.floor(csize.x / 3)
+	local rz = math.floor(csize.z / 3)
+	local lx = math.floor((csize.x % rx) / 2)
+	local lz = math.floor((csize.z % rz) / 2)
 
 	if true then
 		local px, pz, qx, qz, ivm, street_avg, dir, diro
@@ -174,8 +176,8 @@ function cityscape.generate(minp, maxp, seed)
 		for z = minp.z, maxp.z do
 			for x = minp.x, maxp.x do
 				ivm = a:index(x, minp.y, z)
-				px = math.floor((x - minp.x) % rx)
-				pz = math.floor((z - minp.z) % rz)
+				px = math.floor((x - minp.x - lx) % rx)
+				pz = math.floor((z - minp.z - lx) % rz)
 				qx = math.ceil((x - minp.x + 1) / rx)
 				qz = math.ceil((z - minp.z + 1) / rz)
 				street = px < streetw or pz < streetw
