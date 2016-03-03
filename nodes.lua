@@ -32,6 +32,14 @@ stairs.register_stair_and_slab("road", "cityscape:road",
 	"Tarmac",
 	default.node_sound_stone_defaults())
 
+minetest.register_node("cityscape:concrete", {
+	description = "Concrete",
+	tiles = {"default_stone.png"},
+	groups = {cracky = 3, stone = 1},
+	drop = 'default:cobble',
+	sounds = default.node_sound_stone_defaults(),
+})
+
 default.register_fence("cityscape:fence_steel", {
 	description = "Saftey Rail",
 	texture = "default_steel_block.png",
@@ -40,3 +48,57 @@ default.register_fence("cityscape:fence_steel", {
 	sounds = default.node_sound_stone_defaults(),
 })
 
+-- attempt to fix tree intrusions
+minetest.register_node("cityscape:treebot_road", {
+	description = "Road",
+	tiles = {"default_obsidian.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1},
+})
+
+minetest.register_node("cityscape:treebot_concrete", {
+	description = "Concrete",
+	tiles = {"default_stone.png"},
+	groups = {cracky = 3, stone = 1},
+	drop = 'default:cobble',
+	sounds = default.node_sound_stone_defaults(),
+})
+
+minetest.register_abm({
+	nodenames = {"cityscape:treebot_road", "cityscape:treebot_concrete"},
+	interval = 5,
+	chance = 1,
+	action = function(pos)
+		local name = minetest.get_node_or_nil(pos).name
+		local p2 = {}
+		local node
+		local responses = {}
+		for y = pos.y - 10, pos.y + 80 do
+			p2.x = pos.x
+			p2.y = y
+			p2.z = pos.z
+			node = minetest.get_node_or_nil(p2)
+			if node then
+				node = node.name
+				if node then
+					if not responses[node] then
+						responses[node] = minetest.get_item_group(node, "tree") + minetest.get_item_group(node, "leaves")
+					end
+					if responses[node] ~= 0 then
+						minetest.remove_node(p2)
+					end
+				else
+					return
+				end
+			else
+				return
+			end
+		end
+
+		if name == 'cityscape:treebot_road' then
+			minetest.set_node(pos, {name="cityscape:road"})
+		else
+			minetest.set_node(pos, {name="cityscape:concrete"})
+		end
+	end
+})  

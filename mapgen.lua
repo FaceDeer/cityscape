@@ -24,13 +24,16 @@ local node = {}
 local nodes = {
 	-- Ground nodes
 	{"stone", "default:stone"},
+	{"concrete", "cityscape:concrete"},
+	{"road", "cityscape:road"},
 	{"glass", "default:glass"},
 	{"fence", "cityscape:fence_steel"},
+	{"treebot_road", "cityscape:treebot_road"},
+	{"treebot_concrete", "cityscape:treebot_concrete"},
 	{"plate_glass", "cityscape:silver_glass"},
 	{"stair_road", "stairs:stair_road"},
 	{"stair_pine", "stairs:stair_pine_wood"},
 	{"stair_wood", "stairs:stair_wood"},
-	{"road", "cityscape:road"},
 	{"dirt", "default:dirt"},
 	{"dirt_with_grass", "default:dirt_with_grass"},
 	{"dirt_with_dry_grass", "default:dirt_with_dry_grass"},
@@ -154,16 +157,16 @@ function cityscape.generate(minp, maxp, seed)
 		ivm_zn = a:index(math.floor(minp.x + rx + 1), minp.y, minp.z - 1)
 		ivm_zp = a:index(math.floor(minp.x + rx + 1), minp.y, maxp.z + 1)
 		for y = minp.y, maxp.y do
-			if data[ivm_xn] == node["road"] then
+			if data[ivm_xn] == node["road"] or data[ivm_xn] == node["treebot_road"] then
 				avg_xn = y
 			end
-			if data[ivm_xp] == node["road"] then
+			if data[ivm_xp] == node["road"] or data[ivm_xp] == node["treebot_road"] then
 				avg_xp = y
 			end
-			if data[ivm_zn] == node["road"] then
+			if data[ivm_zn] == node["road"] or data[ivm_zn] == node["treebot_road"] then
 				avg_zn = y
 			end
-			if data[ivm_zp] == node["road"] then
+			if data[ivm_zp] == node["road"] or data[ivm_zp] == node["treebot_road"] then
 				avg_zp = y
 			end
 
@@ -210,7 +213,7 @@ function cityscape.generate(minp, maxp, seed)
 					diro = 4
 				end
 
-				for y = minp.y, maxp.y do
+				for y = minp.y, maxp.y + 15 do
 					if y == street_avg + 1 and ramp and street_avg < avg then
 						-- ramp down
 						data[ivm] = node["stair_road"]
@@ -221,24 +224,26 @@ function cityscape.generate(minp, maxp, seed)
 						p2data[ivm] = dir
 					elseif y == street_avg and ramp then
 						-- ramp normal
-						data[ivm] = node["road"]
+						data[ivm] = node["treebot_road"]
 					elseif y < street_avg and ramp then
 						-- ramp support
 						data[ivm] = node["stone"]
 					elseif y == avg and street and not ramp then
-						data[ivm] = node["road"]
+						data[ivm] = node["treebot_road"]
 					elseif y < avg and street and not ramp then
 						data[ivm] = node["stone"]
-					elseif y <= avg and not street then
+					elseif y == avg and not street and not develop then
+						data[ivm] = node["treebot_concrete"]
+					elseif y < avg and not street then
 						data[ivm] = node["stone"]
 					-- the actual buildings
 					elseif develop and y <= bh[qx][qz] then
 						if (y - avg) % 4 == 0 then
-							data[ivm] = node["stone"]
+							data[ivm] = node["concrete"]
 						else
 							if wall_x then
 								if pz % math.floor(rz / 3) == 2 then
-									data[ivm] = node["stone"]
+									data[ivm] = node["concrete"]
 								elseif pz % math.floor(rz / 3) == 5 and y <= avg + 2 then
 									data[ivm] = node["air"]
 								else
@@ -246,7 +251,7 @@ function cityscape.generate(minp, maxp, seed)
 								end
 							elseif wall_z then
 								if px % math.floor(rx / 3) == 2 then
-									data[ivm] = node["stone"]
+									data[ivm] = node["concrete"]
 								elseif px % math.floor(rx / 3) == 5 and y <= avg + 2 then
 									data[ivm] = node["air"]
 								else
@@ -276,6 +281,7 @@ function cityscape.generate(minp, maxp, seed)
 					else
 						data[ivm] = node["air"]
 					end
+
 					ivm = ivm + a.ystride
 				end
 			end
