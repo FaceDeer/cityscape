@@ -70,8 +70,8 @@ function cityscape.generate(minp, maxp, seed)
 	local leaf_radius = 3
 
 	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
-	data = vm:get_data(data)
-	p2data = vm:get_param2_data(p2data)
+	vm:get_data(data)
+	vm:get_param2_data(p2data)
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
 
