@@ -61,7 +61,9 @@ local function place(y, t, data, ivm)
 	end
 end
 
-local data
+
+local data = {}
+local p2data = {}
 
 
 function cityscape.generate(minp, maxp, seed)
@@ -69,7 +71,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
 	data = vm:get_data(data)
-	local p2data = vm:get_param2_data()
+	p2data = vm:get_param2_data(p2data)
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
 
