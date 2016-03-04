@@ -26,6 +26,7 @@ local nodes = {
 	-- Ground nodes
 	{"stone", "default:stone"},
 	{"concrete", "cityscape:concrete"},
+	{"plaster", "cityscape:plaster"},
 	{"road", "cityscape:road"},
 	{"glass", "default:glass"},
 	{"gargoyle", "cityscape:gargoyle"},
@@ -34,6 +35,7 @@ local nodes = {
 	{"treebot_concrete", "cityscape:treebot_concrete"},
 	{"plate_glass", "cityscape:silver_glass"},
 	{"stair_road", "stairs:stair_road"},
+	{"stair_stone", "stairs:stair_stone"},
 	{"stair_pine", "stairs:stair_pine_wood"},
 	{"stair_wood", "stairs:stair_wood"},
 	{"dirt", "default:dirt"},
@@ -70,17 +72,15 @@ end
 local data = {}
 local p2data = {}
 local bd = {}
+local pd = {}
 
 
 function cityscape.generate(minp, maxp, seed)
-	local leaf_radius = 3
-
 	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
 	vm:get_data(data)
-	vm:get_param2_data(p2data)
+	p2data = vm:get_param2_data()
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
-
 	local heightmap = minetest.get_mapgen_object("heightmap")
 
 	local write = false
@@ -91,6 +91,17 @@ function cityscape.generate(minp, maxp, seed)
 		print("Manually collecting garbage...")
 		collectgarbage("collect")
 	end
+
+	local streetw = 5    -- street width
+	local sidewalk = 2   -- sidewalk width
+	local mx, mz = 3, 3
+
+	local rx = math.floor(csize.x / mx)
+	local rz = math.floor(csize.z / mz)
+	local lx = math.floor((csize.x % rx) / 2)
+	local lz = math.floor((csize.z % rz) / 2)
+	local dx, dz = (rx - streetw - sidewalk * 2), (rz - streetw - sidewalk * 2)
+
 
 	local index = 0
 	local avg = 0
@@ -131,17 +142,18 @@ function cityscape.generate(minp, maxp, seed)
 		return
 	end
 
-	local streetw = 5    -- street width
-	local sidewalk = 2   -- sidewalk width
-
-	for i = 1,3 do
+	for i = 1,mx do
 		if not bd[i] then
 			bd[i] = {}
 		end
-		for j = 1,3 do
+		if not pd[i] then
+			pd[i] = {}
+		end
+		for j = 1,mz do
 			if not bd[i][j] then
 				bd[i][j] = {}
 			end
+			pd[i][j] = {}
 			for k = 0,csize.x+1 do
 				if not bd[i][j][k] then
 					bd[i][j][k] = {}
@@ -157,12 +169,6 @@ function cityscape.generate(minp, maxp, seed)
 			end
 		end
 	end
-
-	local mx, mz = 3, 3
-	local rx = math.floor(csize.x / mx)
-	local rz = math.floor(csize.z / mz)
-	local lx = math.floor((csize.x % rx) / 2)
-	local lz = math.floor((csize.z % rz) / 2)
 
 	if true then
 		local px, pz, qx, qz, ivm, street_avg, dir, diro
@@ -280,10 +286,9 @@ function cityscape.generate(minp, maxp, seed)
 			end
 		end
 
-		local dx, dz = (rx - streetw - sidewalk * 2), (rz - streetw - sidewalk * 2)
-		for z = 1,mz do
-			for x = 1,mx do
-				cityscape.build(bd[x][z], dx, maxp.y - avg, dz)
+		for qz = 1,mz do
+			for qx = 1,mx do
+				cityscape.build(bd[qx][qz], pd[qx][qz], dx, maxp.y - avg, dz)
 			end
 		end
 
@@ -305,6 +310,11 @@ function cityscape.generate(minp, maxp, seed)
 							ivm = ivm + a.ystride
 						end
 					end
+				end
+
+				for _, p in pairs(pd[qx][qz]) do
+					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + p[1], avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + p[3])
+					p2data[ivm] = p[4]
 				end
 			end
 		end

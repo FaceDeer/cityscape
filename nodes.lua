@@ -25,6 +25,13 @@ minetest.register_node("cityscape:road", {
 	groups = {cracky = 1, level = 1},
 })
 
+minetest.register_node("cityscape:plaster", {
+	description = "Plaster",
+	tiles = {"default_sandstone.png^[colorize:#FFFFFF:FF"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1, oddly_breakable_by_hand = 1},
+})
+
 stairs.register_stair_and_slab("road", "cityscape:road",
 	{cracky = 1, level = 1},
 	{"default_obsidian.png"},
