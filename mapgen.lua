@@ -31,6 +31,7 @@ do
 		{"road", "cityscape:road"},
 		{"glass", "default:glass"},
 		{"light_panel", "cityscape:light_panel"},
+		{"streetlight", "cityscape:streetlight"},
 		{"gargoyle", "cityscape:gargoyle"},
 		{"fence", "cityscape:fence_steel"},
 		{"treebot_road", "cityscape:treebot_road"},
@@ -203,6 +204,7 @@ function cityscape.generate(minp, maxp, seed)
 			street = px < streetw or pz < streetw
 			ramp = (px < streetw and (qx == 2 or qx == 3)) or (pz < streetw and (qz == 2 or qz == 3))
 			develop = px >= streetw + sidewalk and pz >= streetw + sidewalk and px < rx - sidewalk and pz < rz - sidewalk
+			streetlight = px == streetw and pz == streetw
 
 			-- calculating ramps
 			street_avg = avg
@@ -243,6 +245,8 @@ function cityscape.generate(minp, maxp, seed)
 				elseif y < street_avg and ramp then
 					-- ramp support
 					data[ivm] = node["stone"]
+				elseif y == avg + 1 and streetlight then
+					data[ivm] = node["streetlight"]
 				elseif y == avg and street and not ramp then
 					data[ivm] = node["treebot_road"]
 				elseif y < avg and street and not ramp then

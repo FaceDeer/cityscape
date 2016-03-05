@@ -49,7 +49,7 @@ minetest.register_node("cityscape:concrete", {
 
 default.register_fence("cityscape:fence_steel", {
 	description = "Saftey Rail",
-	texture = "default_steel_block.png",
+	texture = "cityscape_blue_paint.png",
 	material = "default:steel",
 	groups = {cracky = 1, level = 2},
 	sounds = default.node_sound_stone_defaults(),
@@ -75,6 +75,24 @@ minetest.register_node("cityscape:gargoyle", {
 		} },
 	groups = {cracky = 3, stone = 1},
 	drop = 'default:cobble',
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_stone_defaults(),
+})
+
+minetest.register_node("cityscape:streetlight", {
+	description = "Streetlight",
+	tiles = {"cityscape_dark_blue_paint.png"},
+	paramtype = "light",
+	light_source = 14,
+	paramtype2 = "facedir",
+	drawtype = "nodebox",
+	node_box = { type = "fixed",
+		fixed = {
+			{0.1, 2.5, -0.1, -0.1, -0.5, 0.1},
+			{0.05, 2.5, -0.5, -0.05, 2.4, -0.1},
+			{0.1, 2.5, -0.7, -0.1, 2.35, -0.5},
+		} },
+	groups = {cracky = 3, stone = 1},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
