@@ -64,7 +64,7 @@ local function stairwell(data, param, pos1, pos2, left)
 end
 
 
-local function hospital(data, param, dx, dy, dz)
+local function gotham(data, param, dx, dy, dz)
 	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors
 	floors = math.random(math.floor(dy / 4))
 
@@ -123,7 +123,7 @@ local function hospital(data, param, dx, dy, dz)
 end
 
 
-local function standard(data, param, dx, dy, dz)
+local function glass_and_steel(data, param, dx, dy, dz)
 	local develop, wall_x, wall_z, floors
 	floors = math.random(math.floor(dy / 4))
 
@@ -162,16 +162,63 @@ local function standard(data, param, dx, dy, dz)
 end
 
 
+local function concrete(data, param, dx, dy, dz, slit)
+	local develop, wall_x, wall_z, floors
+	floors = math.random(math.floor(dy / 4))
+
+	for z = 1,dz do
+		for x = 1,dx do
+			wall_x = x == 1 or x == dx
+			wall_z = z == 1 or z == dz
+			for y = 1,(floors * 4) do
+				if y % 4 == 0 then
+					data[x][y][z] = node['concrete']
+				elseif wall_x then
+					if z == 6 and y <= 2 then
+						data[x][y][z] = node['air']
+					elseif slit and z % 2 == 0 and y % 4 > 1 then
+						data[x][y][z] = node['plate_glass']
+					elseif not slit and math.floor(z / 2) % 2 == 1 and y % 4 > 1 then
+						data[x][y][z] = node['plate_glass']
+					else
+						data[x][y][z] = node['concrete']
+					end
+				elseif wall_z then
+					if x == 6 and y <= 2 then
+						data[x][y][z] = node['air']
+					elseif slit and x % 2 == 0 and y % 4 > 1 then
+						data[x][y][z] = node['plate_glass']
+					elseif not slit and math.floor(x / 2) % 2 == 1 and y % 4 > 1 then
+						data[x][y][z] = node['plate_glass']
+					else
+						data[x][y][z] = node['concrete']
+					end
+				end
+			end
+		end
+	end
+
+	for f = 1,floors do
+		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
+		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
+	end
+end
+
+
 function cityscape.build(data, param, dx, dy, dz)
-	local sr = math.random(2)
+	local sr = math.random(4)
 
 	if math.random(10) < cityscape.vacancies then
 		return
 	end
 
 	if sr == 1 then
-		hospital(data, param, dx, dy, dz)
+		gotham(data, param, dx, dy, dz)
 	elseif sr == 2 then
-		standard(data, param, dx, dy, dz)
+		glass_and_steel(data, param, dx, dy, dz)
+	elseif sr == 3 then
+		concrete(data, param, dx, dy, dz)
+	elseif sr == 4 then
+		concrete(data, param, dx, dy, dz, true)
 	end
 end
