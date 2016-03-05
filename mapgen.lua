@@ -35,6 +35,7 @@ do
 		{"gargoyle", "cityscape:gargoyle"},
 		{"fence", "cityscape:fence_steel"},
 		{"treebot_road", "cityscape:treebot_road"},
+		{"treebot_road_yellow_line", "cityscape:treebot_road_yellow_line"},
 		{"treebot_concrete", "cityscape:treebot_concrete"},
 		{"plate_glass", "cityscape:silver_glass"},
 		{"stair_road", "stairs:stair_road"},
@@ -166,7 +167,7 @@ function cityscape.generate(minp, maxp, seed)
 	local px, pz, qx, qz, ivm, street_avg, dir, diro
 	local avg_xn, avg_xp, avg_zn, avg_zp = avg, avg, avg, avg
 	local ivm_xn, ivm_xp, ivm_zn, ivm_zp
-	local street, ramp, develop
+	local street, ramp, develop, street_center_x, street_center_z
 
 	-- calculating connection altitude
 	ivm_xn = a:index(minp.x - 1, minp.y, math.floor(minp.z + rz + 1))
@@ -202,6 +203,8 @@ function cityscape.generate(minp, maxp, seed)
 			qz = math.ceil((z - minp.z + 1) / rz)
 
 			street = px < streetw or pz < streetw
+			street_center_x = (px == math.floor(streetw / 2) and pz / 2 == math.floor(pz / 2)) and not (px < streetw and pz < streetw)
+			street_center_z = (pz == math.floor(streetw / 2) and px / 2 == math.floor(px / 2)) and not (px < streetw and pz < streetw)
 			ramp = (px < streetw and (qx == 2 or qx == 3)) or (pz < streetw and (qz == 2 or qz == 3))
 			develop = px >= streetw + sidewalk and pz >= streetw + sidewalk and px < rx - sidewalk and pz < rz - sidewalk
 			streetlight = px == streetw and pz == streetw
@@ -239,6 +242,11 @@ function cityscape.generate(minp, maxp, seed)
 					-- ramp up
 					data[ivm] = node["stair_road"]
 					p2data[ivm] = dir
+				elseif y == street_avg and street_center_x then
+					data[ivm] = node["treebot_road_yellow_line"]
+				elseif y == street_avg and street_center_z then
+					data[ivm] = node["treebot_road_yellow_line"]
+					p2data[ivm] = 21
 				elseif y == street_avg and ramp then
 					-- ramp normal
 					data[ivm] = node["treebot_road"]

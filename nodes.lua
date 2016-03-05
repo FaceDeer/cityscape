@@ -20,7 +20,15 @@ minetest.register_node("cityscape:silver_glass", {
 
 minetest.register_node("cityscape:road", {
 	description = "Road",
-	tiles = {"default_obsidian.png"},
+	tiles = {"cityscape_tarmac.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1},
+})
+
+minetest.register_node("cityscape:road_yellow_line", {
+	description = "Road",
+	tiles = {"cityscape_tarmac_yellow_line.png"},
+	paramtype2 = "facedir",
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1},
 })
@@ -34,7 +42,7 @@ minetest.register_node("cityscape:plaster", {
 
 stairs.register_stair_and_slab("road", "cityscape:road",
 	{cracky = 1, level = 1},
-	{"default_obsidian.png"},
+	{"cityscape_tarmac.png"},
 	"Ramp",
 	"Tarmac",
 	default.node_sound_stone_defaults())
@@ -116,7 +124,15 @@ minetest.register_node("cityscape:light_panel", {
 -- attempt to fix tree intrusions
 minetest.register_node("cityscape:treebot_road", {
 	description = "Road",
-	tiles = {"default_obsidian.png"},
+	tiles = {"cityscape_tarmac.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1},
+})
+
+minetest.register_node("cityscape:treebot_road_yellow_line", {
+	description = "Road",
+	tiles = {"cityscape_tarmac_yellow_line.png"},
+	paramtype2 = "facedir",
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1},
 })
@@ -130,15 +146,16 @@ minetest.register_node("cityscape:treebot_concrete", {
 })
 
 minetest.register_abm({
-	nodenames = {"cityscape:treebot_road", "cityscape:treebot_concrete"},
+	nodenames = {"cityscape:treebot_road_yellow_line", "cityscape:treebot_road", "cityscape:treebot_concrete"},
 	interval = 5,
 	chance = 1,
 	action = function(pos)
-		local name = minetest.get_node_or_nil(pos).name
+		local node = minetest.get_node_or_nil(pos)
+		local name = node.name
+		local param2 = node.param2
 		local p2 = {}
-		local node
 		local responses = {}
-		for y = pos.y - 10, pos.y + 80 do
+		for y = pos.y - 10, pos.y + 40 do
 			p2.x = pos.x
 			p2.y = y
 			p2.z = pos.z
@@ -153,15 +170,17 @@ minetest.register_abm({
 						minetest.remove_node(p2)
 					end
 				else
-					return
+					--return
 				end
 			else
-				return
+				--return
 			end
 		end
 
 		if name == 'cityscape:treebot_road' then
 			minetest.set_node(pos, {name="cityscape:road"})
+		elseif name == 'cityscape:treebot_road_yellow_line' then
+			minetest.set_node(pos, {name="cityscape:road_yellow_line", param2=param2})
 		else
 			minetest.set_node(pos, {name="cityscape:concrete"})
 		end
