@@ -112,27 +112,29 @@ function cityscape.generate(minp, maxp, seed)
 				return
 			end
 
-			if heightmap[index] < min then
-				min = heightmap[index]
-			end
-			if heightmap[index] > max then
-				max = heightmap[index]
-			end
+			if x == minp.x or z == minp.z or x == maxp.x or z == maxp.z then
+				if heightmap[index] < min then
+					min = heightmap[index]
+				end
+				if heightmap[index] > max then
+					max = heightmap[index]
+				end
 
-			avg = avg + heightmap[index]
-			count = count + 1
+				avg = avg + heightmap[index]
+				count = count + 1
+			end
 		end
 	end
 
 	-- Avoid steep terrain.
-	if max - min > 20 or min < 1 then
+	if max - min > 20 then
 		return
 	end
 
 	-- If the average ground level is too high, there won't
 	-- be enough room for any buildings.
 	avg = math.round(avg / count)
-	if avg > minp.y + 67 then
+	if avg > minp.y + 67 or avg < 1 then
 		return
 	end
 
