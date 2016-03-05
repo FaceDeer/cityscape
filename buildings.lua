@@ -5,7 +5,7 @@ local function lights(data, param, pos1, pos2)
 	local y = math.max(pos2.y, pos1.y)
 	for z = pos1.z,pos2.z do
 		for x = pos1.x,pos2.x do
-			if (data[x][y][z] == node['air'] or data[x][y][z] == nil) and math.random(20) == 1 then
+			if (data[x][y][z] == node['air'] or data[x][y][z] == nil) and data[x][y+1][z] == node['concrete'] and math.random(20) == 1 then
 				data[x][y][z] = node['light_panel']
 				param[#param+1] = {x, y, z, 20} -- 20-23
 			end
@@ -163,9 +163,15 @@ end
 
 
 function cityscape.build(data, param, dx, dy, dz)
-	if math.random(2) == 1 then
+	local sr = math.random(2)
+
+	if math.random(10) < cityscape.vacancies then
+		return
+	end
+
+	if sr == 1 then
 		hospital(data, param, dx, dy, dz)
-	else
+	elseif sr == 2 then
 		standard(data, param, dx, dy, dz)
 	end
 end

@@ -1,0 +1,5 @@
+#    ABOUT SETTINGS
+
+# The chance (in ten) that a given lot will be empty,
+# rather than occupied by a building.
+cityscape_vacancies (Vacancies) int 0
