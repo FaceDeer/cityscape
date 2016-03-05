@@ -244,9 +244,9 @@ function cityscape.generate(minp, maxp, seed)
 					-- ramp up
 					data[ivm] = node["stair_road"]
 					p2data[ivm] = dir
-				elseif (y == street_avg or (y == avg and not ramp)) and street_center_x then
+				elseif y == avg and street_center_x then
 					data[ivm] = node["treebot_road_yellow_line"]
-				elseif (y == street_avg or (y == avg and not ramp)) and street_center_z then
+				elseif y == avg and street_center_z then
 					data[ivm] = node["treebot_road_yellow_line"]
 					p2data[ivm] = 21
 				elseif y == street_avg and ramp then
