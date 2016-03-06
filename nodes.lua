@@ -35,7 +35,7 @@ minetest.register_node("cityscape:road_yellow_line", {
 
 minetest.register_node("cityscape:plaster", {
 	description = "Plaster",
-	tiles = {"default_sandstone.png^[colorize:#FFFFFF:FF"},
+	tiles = {"default_desert_stone.png^[colorize:#8C8175:225"},
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1, oddly_breakable_by_hand = 1},
 })
