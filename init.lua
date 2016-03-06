@@ -2,9 +2,17 @@ cityscape = {}
 cityscape.version = "1.0"
 
 cityscape.path = minetest.get_modpath("cityscape")
-cityscape.vacancies = tonumber(minetest.setting_get('cityscape_vacancies'))
+cityscape.vacancies = tonumber(minetest.setting_get('cityscape_vacancies')) or 0
 if cityscape.vacancies < 0 or cityscape.vacancies > 10 then
 	cityscape.vacancies = 0
+end
+cityscape.divisions_x = tonumber(minetest.setting_get('cityscape_divisions_x')) or 3
+if cityscape.divisions_x < 0 or cityscape.divisions_x > 3 then
+	cityscape.divisions_x = 3
+end
+cityscape.divisions_z = tonumber(minetest.setting_get('cityscape_divisions_z')) or 3
+if cityscape.divisions_z < 0 or cityscape.divisions_z > 3 then
+	cityscape.divisions_z = 3
 end
 
 dofile(cityscape.path .. "/nodes.lua")

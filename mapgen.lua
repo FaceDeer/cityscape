@@ -88,7 +88,8 @@ function cityscape.generate(minp, maxp, seed)
 
 	local streetw = 5    -- street width
 	local sidewalk = 2   -- sidewalk width
-	local mx, mz = 3, 3  -- divide the block into this many buildings
+	-- divide the block into this many buildings
+	local mx, mz = cityscape.divisions_x, cityscape.divisions_z
 
 	local rx = math.floor(csize.x / mx)
 	local rz = math.floor(csize.z / mz)
@@ -244,9 +245,9 @@ function cityscape.generate(minp, maxp, seed)
 					-- ramp up
 					data[ivm] = node["stair_road"]
 					p2data[ivm] = dir
-				elseif y == avg and street_center_x then
+				elseif y == avg and (not ramp or street_avg == avg) and street_center_x then
 					data[ivm] = node["treebot_road_yellow_line"]
-				elseif y == avg and street_center_z then
+				elseif y == avg and (not ramp or street_avg == avg) and street_center_z then
 					data[ivm] = node["treebot_road_yellow_line"]
 					p2data[ivm] = 21
 				elseif y == street_avg and ramp then
@@ -301,7 +302,7 @@ function cityscape.generate(minp, maxp, seed)
 		for qx = 1,mx do
 			for iz = 0,dx+1 do
 				for ix = 0,dz+1 do
-					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + ix, avg, minp.z + (qz - 1) * rz + streetw + sidewalk + iz)
+					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx - 1 + ix, avg, minp.z + (qz - 1) * rz + streetw + sidewalk + lz - 1 + iz)
 					for y = 0,(maxp.y - avg) do
 						if bd[qx][qz][ix][y][iz] then
 							data[ivm] = bd[qx][qz][ix][y][iz]
