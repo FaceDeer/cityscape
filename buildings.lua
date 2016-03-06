@@ -25,7 +25,7 @@ local function stairwell(data, param, pos1, pos2, left)
 	px = math.floor((pos2.x - pos1.x - 4) / 2)
 	py = math.min(pos2.y, pos1.y)
 	pz = math.floor((pos2.z - pos1.z - 6) / 2)
-	local walls = px > 1 or pz > 1
+	local walls = px > 2 and pz > 2
 
 	if walls then
 		for z = 1+dz,6+dz do
@@ -117,7 +117,7 @@ local function gotham(data, param, dx, dy, dz)
 	end
 
 	for f = 1,floors do
-		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
+		stairwell(data, param, {x=2,y=((f-1)*4),z=2}, {x=dx-1,y=(f*4-1),z=dz-1}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=3,y=((f-1)*4),z=3}, {x=dx-2,y=(f*4-1),z=dz-2})
 	end
 end

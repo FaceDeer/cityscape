@@ -95,7 +95,8 @@ function cityscape.generate(minp, maxp, seed)
 	local rz = math.floor(csize.z / mz)
 	local lx = math.floor((csize.x % rx) / 2)
 	local lz = math.floor((csize.z % rz) / 2)
-	local dx, dz = (rx - streetw - sidewalk * 2), (rz - streetw - sidewalk * 2)
+	local dx = (rx - streetw - sidewalk * 2)
+	local dz = (rz - streetw - sidewalk * 2)
 
 
 	local index = 0
@@ -151,7 +152,7 @@ function cityscape.generate(minp, maxp, seed)
 				bd[i][j] = {}
 			end
 			pd[i][j] = {}
-			for k = 0,csize.x+1 do
+			for k = 0,dx+1 do
 				if not bd[i][j][k] then
 					bd[i][j][k] = {}
 				end
@@ -159,7 +160,7 @@ function cityscape.generate(minp, maxp, seed)
 					if not bd[i][j][k][l] then
 						bd[i][j][k][l] = {}
 					end
-					for m = 0,csize.z+1 do
+					for m = 0,dz+1 do
 						bd[i][j][k][l][m] = nil
 					end
 				end
@@ -170,13 +171,13 @@ function cityscape.generate(minp, maxp, seed)
 	local px, pz, qx, qz, ivm, street_avg, dir, diro
 	local avg_xn, avg_xp, avg_zn, avg_zp = avg, avg, avg, avg
 	local ivm_xn, ivm_xp, ivm_zn, ivm_zp
-	local street, ramp, develop, street_center_x, street_center_z
+	local street, ramp, street_center_x, street_center_z, streetlight
 
 	-- calculating connection altitude
-	ivm_xn = a:index(minp.x - 1, minp.y, math.floor(minp.z + rz + 1))
-	ivm_xp = a:index(maxp.x + 1, minp.y, math.floor(minp.z + rz + 1))
-	ivm_zn = a:index(math.floor(minp.x + rx + 1), minp.y, minp.z - 1)
-	ivm_zp = a:index(math.floor(minp.x + rx + 1), minp.y, maxp.z + 1)
+	ivm_xn = a:index(minp.x - 1, minp.y, math.floor(minp.z + lz))
+	ivm_xp = a:index(maxp.x + 1, minp.y, math.floor(minp.z + lz))
+	ivm_zn = a:index(math.floor(minp.x + lx), minp.y, minp.z - 1)
+	ivm_zp = a:index(math.floor(minp.x + lx), minp.y, maxp.z + 1)
 	for y = minp.y, maxp.y do
 		if data[ivm_xn] == node["road"] or data[ivm_xn] == node["treebot_road"] then
 			avg_xn = y
@@ -201,15 +202,14 @@ function cityscape.generate(minp, maxp, seed)
 		for x = minp.x, maxp.x do
 			ivm = a:index(x, minp.y, z)
 			px = math.floor((x - minp.x - lx) % rx)
-			pz = math.floor((z - minp.z - lx) % rz)
-			qx = math.ceil((x - minp.x + 1) / rx)
-			qz = math.ceil((z - minp.z + 1) / rz)
+			pz = math.floor((z - minp.z - lz) % rz)
+			qx = math.floor((x - minp.x) / rx) + 1
+			qz = math.floor((z - minp.z) / rz) + 1
 
 			street = px < streetw or pz < streetw
 			street_center_x = (px == math.floor(streetw / 2) and pz / 2 == math.floor(pz / 2)) and not (px < streetw and pz < streetw)
 			street_center_z = (pz == math.floor(streetw / 2) and px / 2 == math.floor(px / 2)) and not (px < streetw and pz < streetw)
-			ramp = (px < streetw and (qx == 2 or qx == 3)) or (pz < streetw and (qz == 2 or qz == 3))
-			develop = px >= streetw + sidewalk and pz >= streetw + sidewalk and px < rx - sidewalk and pz < rz - sidewalk
+			ramp = (px < streetw and ((qx > 1 or mx == 1) and qx <= mx)) or (pz < streetw and ((qz > 1 or mz == 1) and qz <= mz))
 			streetlight = px == streetw and pz == streetw
 
 			-- calculating ramps
@@ -262,7 +262,7 @@ function cityscape.generate(minp, maxp, seed)
 					data[ivm] = node["treebot_road"]
 				elseif y < avg and street and not ramp then
 					data[ivm] = node["stone"]
-				elseif y == avg and not street and not develop then
+				elseif y == avg and not street then
 					data[ivm] = node["treebot_concrete"]
 				elseif y < avg and not street then
 					data[ivm] = node["stone"]
@@ -300,18 +300,14 @@ function cityscape.generate(minp, maxp, seed)
 
 	for qz = 1,mz do
 		for qx = 1,mx do
-			for iz = 0,dx+1 do
-				for ix = 0,dz+1 do
-					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx - 1 + ix, avg, minp.z + (qz - 1) * rz + streetw + sidewalk + lz - 1 + iz)
+			for iz = 0,dz+1 do
+				for ix = 0,dx+1 do
+					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + ix - 1, avg, minp.z + (qz - 1) * rz + streetw + sidewalk + lz + iz - 1)
 					for y = 0,(maxp.y - avg) do
 						if bd[qx][qz][ix][y][iz] then
 							data[ivm] = bd[qx][qz][ix][y][iz]
-						else
-							if y == 0 then
-								data[ivm] = node['treebot_concrete']
-							else
-								data[ivm] = node['air']
-							end
+						elseif y > 0 then
+							data[ivm] = node['air']
 						end
 						ivm = ivm + a.ystride
 					end
@@ -319,7 +315,7 @@ function cityscape.generate(minp, maxp, seed)
 			end
 
 			for _, p in pairs(pd[qx][qz]) do
-				ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + p[1], avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + p[3])
+				ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + p[1] - 1, avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + lz + p[3] - 1)
 				p2data[ivm] = p[4]
 			end
 		end

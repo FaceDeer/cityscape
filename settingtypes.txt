@@ -6,6 +6,12 @@ cityscape_vacancies (Vacancies) int 0
 
 # The number of streets/buildings to divide each block into,
 # Setting each to three gives you nine buildings per block.
-# This ranges from one to three.
+# While you can enter a range of one to four, note that
+# ramps will not work correctly if this is set to one.
 cityscape_divisions_x (Divisions X) int 3
+
+# The number of streets/buildings to divide each block into,
+# Setting each to three gives you nine buildings per block.
+# While you can enter a range of one to four, note that
+# ramps will not work correctly if this is set to one.
 cityscape_divisions_z (Divisions Z) int 3
