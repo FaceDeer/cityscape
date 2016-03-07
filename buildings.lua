@@ -65,8 +65,14 @@ end
 
 
 local function gotham(data, param, dx, dy, dz)
-	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors
-	floors = math.random(math.floor(dy / 4))
+	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors, conc
+	local c = math.random(5)
+	if c == 1 then
+		conc = "concrete"
+	else
+		conc = "concrete"..c
+	end
+	floors = math.random(2,math.floor(dy / 4))
 
 						--if y % 4 == 0 and x % 5 == 2 then
 							--data[x][y][z] = node["gargoyle"]
@@ -80,10 +86,10 @@ local function gotham(data, param, dx, dy, dz)
 			wall_z_2 = z == 2 or z == dz - 1
 			for y = 1,(floors * 4) do
 				if y % 4 == 0 and develop then
-					data[x][y][z] = node['concrete']
+					data[x][y][z] = node[conc]
 				elseif wall_x then
 					if z % 5 == 4 then
-						data[x][y][z] = node["concrete"]
+						data[x][y][z] = node[conc]
 					else
 						data[x][y][z] = node["air"]
 					end
@@ -91,13 +97,13 @@ local function gotham(data, param, dx, dy, dz)
 					if z % 12 == 3 and y <= 2 then
 						data[x][y][z] = node["air"]
 					elseif y % 4 ~= 2 or z % 5 == 4 then
-						data[x][y][z] = node["concrete"]
+						data[x][y][z] = node[conc]
 					else
 						data[x][y][z] = node["plate_glass"]
 					end
 				elseif wall_z then
 					if x % 5 == 4 then
-						data[x][y][z] = node["concrete"]
+						data[x][y][z] = node[conc]
 					else
 						data[x][y][z] = node["air"]
 					end
@@ -105,7 +111,7 @@ local function gotham(data, param, dx, dy, dz)
 					if x % 12 == 3 and y <= 2 then
 						data[x][y][z] = node["air"]
 					elseif y % 4 ~= 2 or x % 5 == 4 then
-						data[x][y][z] = node["concrete"]
+						data[x][y][z] = node[conc]
 					else
 						data[x][y][z] = node["plate_glass"]
 					end
@@ -124,8 +130,14 @@ end
 
 
 local function glass_and_steel(data, param, dx, dy, dz)
-	local develop, wall_x, wall_z, floors
-	floors = math.random(math.floor(dy / 4))
+	local develop, wall_x, wall_z, floors, conc
+	local c = math.random(5)
+	if c == 1 then
+		conc = "concrete"
+	else
+		conc = "concrete"..c
+	end
+	floors = math.random(2,math.floor(dy / 4))
 
 	for z = 1,dz do
 		for x = 1,dx do
@@ -133,10 +145,10 @@ local function glass_and_steel(data, param, dx, dy, dz)
 			wall_z = z == 1 or z == dz
 			for y = 1,(floors * 4) do
 				if y % 4 == 0 then
-					data[x][y][z] = node['concrete']
+					data[x][y][z] = node[conc]
 				elseif wall_x then
 					if (z - 2) % 5 == 2 then
-						data[x][y][z] = node['concrete']
+						data[x][y][z] = node[conc]
 					elseif z == 6 and y <= 2 then
 						data[x][y][z] = node['air']
 					else
@@ -144,7 +156,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 					end
 				elseif wall_z then
 					if (x - 2) % 5 == 2 then
-						data[x][y][z] = node['concrete']
+						data[x][y][z] = node[conc]
 					elseif x == 6 and y <= 2 then
 						data[x][y][z] = node['air']
 					else
@@ -162,16 +174,36 @@ local function glass_and_steel(data, param, dx, dy, dz)
 end
 
 
-local function concrete(data, param, dx, dy, dz, slit)
-	local develop, wall_x, wall_z, floors
-	floors = math.random(math.floor(dy / 4))
+local function simple(data, param, dx, dy, dz, slit)
+	local develop, wall_x, wall_z, floors, conc, c
+	floors = math.random(2,math.floor(dy / 4))
+
+	if floors < 6 then
+		c = math.random(9)
+	else
+		c = math.random(5)
+	end
+
+	if c == 1 then
+		conc = "concrete"
+	elseif c == 6 then
+		conc = "brick"
+	elseif c == 7 then
+		conc = "sandstone_brick"
+	elseif c == 8 then
+		conc = "stone_brick"
+	elseif c == 9 then
+		conc = "desert_stone_brick"
+	else
+		conc = "concrete"..c
+	end
 
 	for z = 1,dz do
 		for x = 1,dx do
 			wall_x = x == 1 or x == dx
 			wall_z = z == 1 or z == dz
 			for y = 1,(floors * 4) do
-				if y % 4 == 0 then
+				if y % 4 == 0 and x > 1 and z > 1 and x < dx and z < dz then
 					data[x][y][z] = node['concrete']
 				elseif wall_x then
 					if z == 6 and y <= 2 then
@@ -181,7 +213,7 @@ local function concrete(data, param, dx, dy, dz, slit)
 					elseif not slit and math.floor(z / 2) % 2 == 1 and y % 4 > 1 then
 						data[x][y][z] = node['plate_glass']
 					else
-						data[x][y][z] = node['concrete']
+						data[x][y][z] = node[conc]
 					end
 				elseif wall_z then
 					if x == 6 and y <= 2 then
@@ -191,7 +223,7 @@ local function concrete(data, param, dx, dy, dz, slit)
 					elseif not slit and math.floor(x / 2) % 2 == 1 and y % 4 > 1 then
 						data[x][y][z] = node['plate_glass']
 					else
-						data[x][y][z] = node['concrete']
+						data[x][y][z] = node[conc]
 					end
 				end
 			end
@@ -217,8 +249,8 @@ function cityscape.build(data, param, dx, dy, dz)
 	elseif sr == 2 then
 		glass_and_steel(data, param, dx, dy, dz)
 	elseif sr == 3 then
-		concrete(data, param, dx, dy, dz)
+		simple(data, param, dx, dy, dz)
 	elseif sr == 4 then
-		concrete(data, param, dx, dy, dz, true)
+		simple(data, param, dx, dy, dz, true)
 	end
 end

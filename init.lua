@@ -15,6 +15,12 @@ if cityscape.divisions_z < 0 or cityscape.divisions_z > 4 then
 	cityscape.divisions_z = 3
 end
 
+function cityscape.clone_node(name)
+	local node = minetest.registered_nodes[name]
+	local node2 = table.copy(node)
+	return node2
+end
+
 dofile(cityscape.path .. "/nodes.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")

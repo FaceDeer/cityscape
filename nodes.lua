@@ -1,9 +1,3 @@
---function cityscape.clone_node(name)
---	local node = minetest.registered_nodes[name]
---	local node2 = cityscape.table_copy(node)
---	return node2
---end
-
 minetest.register_node("cityscape:silver_glass", {
 	description = "Plate Glass",
 	drawtype = "glasslike",
@@ -53,7 +47,19 @@ minetest.register_node("cityscape:concrete", {
 	groups = {cracky = 3, stone = 1},
 	drop = 'default:cobble',
 	sounds = default.node_sound_stone_defaults(),
+	is_ground_content = false,
 })
+
+local newnode = cityscape.clone_node("cityscape:concrete")
+newnode.tiles = {"default_stone.png^[colorize:#964B00:40"}
+minetest.register_node("cityscape:concrete2", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#FF0000:20"}
+minetest.register_node("cityscape:concrete3", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#4682B4:10"}
+minetest.register_node("cityscape:concrete4", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#000000:40"}
+minetest.register_node("cityscape:concrete5", newnode)
+
 
 default.register_fence("cityscape:fence_steel", {
 	description = "Saftey Rail",
@@ -170,10 +176,10 @@ minetest.register_abm({
 						minetest.remove_node(p2)
 					end
 				else
-					--return
+					return
 				end
 			else
-				--return
+				return
 			end
 		end
 
@@ -185,4 +191,4 @@ minetest.register_abm({
 			minetest.set_node(pos, {name="cityscape:concrete"})
 		end
 	end
-})  
+})
