@@ -201,6 +201,8 @@ function cityscape.generate(minp, maxp, seed)
 			if table.contains(good_nodes, data[ivm_xn]) then
 				avg_xn = y
 				off_xn = 0
+			elseif off_xn == border and data[ivm_xn] == node['ignore'] then
+				off_xn = border / 2
 			end
 			if table.contains(good_nodes, data[ivm_xp]) then
 				avg_xp = y
@@ -209,6 +211,8 @@ function cityscape.generate(minp, maxp, seed)
 			if table.contains(good_nodes, data[ivm_zn]) then
 				avg_zn = y
 				off_zn = 0
+			elseif off_zn == border and data[ivm_zn] == node['ignore'] then
+				off_zn = border / 2
 			end
 			if table.contains(good_nodes, data[ivm_zp]) then
 				avg_zp = y
@@ -221,7 +225,6 @@ function cityscape.generate(minp, maxp, seed)
 			ivm_zp = ivm_zp + a.ystride
 		end
 
-		-- -200,300
 		for z = minp.z - off_zn, maxp.z + off_zp do
 			for x = minp.x - off_xn, maxp.x + off_xp do
 				if x < minp.x or x > maxp.x or z < minp.z or z > maxp.z then
