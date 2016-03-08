@@ -5,7 +5,7 @@ local function lights(data, param, pos1, pos2)
 	local y = math.max(pos2.y, pos1.y)
 	for z = pos1.z,pos2.z do
 		for x = pos1.x,pos2.x do
-			if (data[x][y][z] == node["air"] or data[x][y][z] == nil) and data[x][y+1][z] == node["roof"] and math.random(20) == 1 then
+			if (data[x][y][z] == node["air"] or data[x][y][z] == nil) and (data[x][y+1][z] == node["floor_ceiling"] or data[x][y+1][z] == node["roof"]) and math.random(20) == 1 then
 				data[x][y][z] = node["light_panel"]
 				param[#param+1] = {x, y, z, 20} -- 20-23
 			end
