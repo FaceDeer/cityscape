@@ -14,6 +14,26 @@ local function lights(data, param, pos1, pos2)
 end
 
 
+local function roof_box(data, off, sy, dx, dz, tex)
+	for z = off,dz-off+1 do
+		for x = off,dx-off+1 do
+			for y = sy+1,sy+3 do
+				if z == off or z == dz-off+1 or x == off or x == dx-off+1 then
+					if y < sy + 3 and x == dx - off + 1 and z == math.floor(dz / 2) then
+						data[x][y][z] = node["air"]
+					else
+						data[x][y][z] = tex
+					end
+				end
+			end
+			if z > off and z < dz-off+1 and x > off and x < dx-off+1 then
+				data[x][sy+3][z] = node["roof"]
+			end
+		end
+	end
+end
+
+
 local function stairwell(data, param, pos1, pos2, left)
 	local dz, px, py, pz
 	if left then
@@ -74,7 +94,7 @@ local function gotham(data, param, dx, dy, dz)
 	else
 		conc = "concrete"..c
 	end
-	floors = math.random(2,math.floor(dy / 4))
+	floors = math.random(2, math.floor(dy / 4) - 1)
 
 	-- all this for gargoyles...
 	if math.random(2) == 1 and floors > 5 then
@@ -160,9 +180,17 @@ local function gotham(data, param, dx, dy, dz)
 		end
 	end
 
-	for f = 1,floors do
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	for f = 1,floors-ra do
 		stairwell(data, param, {x=2,y=((f-1)*4),z=2}, {x=dx-1,y=(f*4-1),z=dz-1}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=3,y=((f-1)*4),z=3}, {x=dx-2,y=(f*4-1),z=dz-2})
+	end
+
+	if ra == 0 then
+		roof_box(data, 6, floors * 4, dx, dz, node[conc])
 	end
 end
 
@@ -175,7 +203,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 	else
 		conc = "concrete"..c
 	end
-	floors = math.random(2,math.floor(dy / 4))
+	floors = math.random(2, math.floor(dy / 4) - 1)
 
 	for z = 1,dz do
 		for x = 1,dx do
@@ -213,16 +241,24 @@ local function glass_and_steel(data, param, dx, dy, dz)
 		end
 	end
 
-	for f = 1,floors do
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
+	end
+
+	if ra == 0 then
+		roof_box(data, 6, floors * 4, dx, dz, node[conc])
 	end
 end
 
 
 local function simple(data, param, dx, dy, dz, slit)
 	local develop, wall_x, wall_z, floors, conc, c
-	floors = math.random(2,math.floor(dy / 4))
+	floors = math.random(2, math.floor(dy / 4) - 1)
 
 	if floors < 6 then
 		c = math.random(9)
@@ -280,9 +316,17 @@ local function simple(data, param, dx, dy, dz, slit)
 		end
 	end
 
-	for f = 1,floors do
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
+	end
+
+	if ra == 0 then
+		roof_box(data, 6, floors * 4, dx, dz, node[conc])
 	end
 end
 
