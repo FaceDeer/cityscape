@@ -15,20 +15,6 @@ if cityscape.divisions_z < 0 or cityscape.divisions_z > 4 then
 	cityscape.divisions_z = 3
 end
 
--- Check if the table contains an element.
-function table.contains(table, element)
-  for key, value in pairs(table) do
-    if value == element then
-			if key then
-				return key
-			else
-				return true
-			end
-    end
-  end
-  return false
-end
-
 function cityscape.clone_node(name)
 	local node = minetest.registered_nodes[name]
 	local node2 = table.copy(node)

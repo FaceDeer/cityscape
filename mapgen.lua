@@ -69,7 +69,7 @@ do
 	for _, i in pairs(nodes) do
 		node[i[1]] = minetest.get_content_id(i[2])
 		if i[3] then
-			good_nodes[#good_nodes+1] = node[i[1]]
+			good_nodes[node[i[1]]] = true
 		end
 	end
 end
@@ -193,28 +193,30 @@ function cityscape.generate(minp, maxp, seed)
 		local off_xn, off_xp, off_zn, off_zp = border, border, border, border
 
 		-- calculating connection altitude
-		ivm_xn = a:index(minp.x - 1, minp.y, math.floor(maxp.z - rx))
+		-- Border data is frequently incorrect. However, there's not
+		-- really any other way to deal with these issues.
+		ivm_xn = a:index(minp.x - 1, minp.y, math.floor(minp.z + rx))
 		ivm_xp = a:index(maxp.x + 1, minp.y, math.floor(minp.z + rx))
-		ivm_zn = a:index(math.floor(maxp.x - rz), minp.y, minp.z - 1)
+		ivm_zn = a:index(math.floor(minp.x + rz), minp.y, minp.z - 1)
 		ivm_zp = a:index(math.floor(minp.x + rz), minp.y, maxp.z + 1)
 		for y = minp.y, maxp.y do
-			if table.contains(good_nodes, data[ivm_xn]) then
+			if good_nodes[data[ivm_xn]] then
 				avg_xn = y
 				off_xn = 0
 			elseif off_xn == border and data[ivm_xn] == node['ignore'] then
 				off_xn = border / 2
 			end
-			if table.contains(good_nodes, data[ivm_xp]) then
+			if good_nodes[data[ivm_xp]] then
 				avg_xp = y
 				off_xp = 0
 			end
-			if table.contains(good_nodes, data[ivm_zn]) then
+			if good_nodes[data[ivm_zn]] then
 				avg_zn = y
 				off_zn = 0
 			elseif off_zn == border and data[ivm_zn] == node['ignore'] then
 				off_zn = border / 2
 			end
-			if table.contains(good_nodes, data[ivm_zp]) then
+			if good_nodes[data[ivm_zp]] then
 				avg_zp = y
 				off_zp = 0
 			end
@@ -225,6 +227,8 @@ function cityscape.generate(minp, maxp, seed)
 			ivm_zp = ivm_zp + a.ystride
 		end
 
+		-- This causes problems, but at least it clears out
+		-- most of the overlapping schematics.
 		for z = minp.z - off_zn, maxp.z + off_zp do
 			for x = minp.x - off_xn, maxp.x + off_xp do
 				if x < minp.x or x > maxp.x or z < minp.z or z > maxp.z then
