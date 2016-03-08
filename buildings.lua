@@ -66,6 +66,8 @@ end
 
 local function gotham(data, param, dx, dy, dz)
 	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors, conc
+	local dir
+
 	local c = math.random(5)
 	if c == 1 then
 		conc = "concrete"
@@ -74,8 +76,32 @@ local function gotham(data, param, dx, dy, dz)
 	end
 	floors = math.random(2,math.floor(dy / 4))
 
-						--if y % 4 == 0 and x % 5 == 2 then
-							--data[x][y][z] = node["gargoyle"]
+	-- all this for gargoyles...
+	if math.random(2) == 1 and floors > 5 then
+		for z = 0,dz+1 do
+			for x = 0,dx+1 do
+				y = floors * 4
+				y = y - (y % 4)
+				if (x == 0 or x == dx + 1) and z % 5 == 4 then
+					data[x][y][z] = node["gargoyle"]
+					if x == 0 then
+						dir = 18
+					else
+						dir = 12
+					end
+					param[#param+1] = {x, y, z, dir}
+				elseif (z == 0 or z == dz + 1) and x % 5 == 4 then
+					data[x][y][z] = node["gargoyle"]
+					if z == 0 then
+						dir = 9
+					else
+						dir = 7
+					end
+					param[#param+1] = {x, y, z, dir}
+				end
+			end
+		end
+	end
 
 	for z = 1,dz do
 		for x = 1,dx do
@@ -225,7 +251,6 @@ local function simple(data, param, dx, dy, dz, slit)
 			for y = 0,(floors * 4) do
 				if y % 4 == 0 and x > 1 and z > 1 and x < dx and z < dz then
 					if floors * 4 == y then
-						print("placing roof")
 						data[x][y][z] = node["roof"]
 					else
 						data[x][y][z] = node["floor_ceiling"]
@@ -265,7 +290,7 @@ end
 function cityscape.build(data, param, dx, dy, dz)
 	local sr = math.random(4)
 
-	if math.random(10) < cityscape.vacancies then
+	if math.random(10) <= cityscape.vacancies then
 		return
 	end
 
