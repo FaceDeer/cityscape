@@ -32,6 +32,9 @@ do
 		{"concrete3", "cityscape:concrete3", true},
 		{"concrete4", "cityscape:concrete4", true},
 		{"concrete5", "cityscape:concrete5", true},
+		{"sidewalk", "cityscape:sidewalk", true},
+		{"floor_ceiling", "cityscape:floor_ceiling", true},
+		{"roof", "cityscape:roof", true},
 		{"brick", "default:brick", true},
 		{"sandstone_brick", "default:sandstonebrick", true},
 		{"stone_brick", "default:stonebrick", true},
@@ -203,7 +206,7 @@ function cityscape.generate(minp, maxp, seed)
 			if good_nodes[data[ivm_xn]] then
 				avg_xn = y
 				off_xn = 0
-			elseif off_xn == border and data[ivm_xn] == node['ignore'] then
+			elseif off_xn == border and data[ivm_xn] == node["ignore"] then
 				off_xn = border / 2
 			end
 			if good_nodes[data[ivm_xp]] then
@@ -213,7 +216,7 @@ function cityscape.generate(minp, maxp, seed)
 			if good_nodes[data[ivm_zn]] then
 				avg_zn = y
 				off_zn = 0
-			elseif off_zn == border and data[ivm_zn] == node['ignore'] then
+			elseif off_zn == border and data[ivm_zn] == node["ignore"] then
 				off_zn = border / 2
 			end
 			if good_nodes[data[ivm_zp]] then
@@ -235,9 +238,9 @@ function cityscape.generate(minp, maxp, seed)
 					ivm = a:index(x, minp.y, z)
 					for y = minp.y, maxp.y do
 						if y <= avg then
-							data[ivm] = node['concrete']
+							data[ivm] = node["concrete"]
 						else
-							data[ivm] = node['air']
+							data[ivm] = node["air"]
 						end
 						ivm = ivm + a.ystride
 					end
@@ -310,7 +313,7 @@ function cityscape.generate(minp, maxp, seed)
 					elseif y < avg and street and not ramp then
 						data[ivm] = node["stone"]
 					elseif y == avg and not street then
-						data[ivm] = node["concrete"]
+						data[ivm] = node["sidewalk"]
 					elseif y < avg and not street then
 						data[ivm] = node["stone"]
 						-- safety barriers
@@ -354,7 +357,7 @@ function cityscape.generate(minp, maxp, seed)
 							if bd[qx][qz][ix][y][iz] then
 								data[ivm] = bd[qx][qz][ix][y][iz]
 							elseif y > 0 then
-								data[ivm] = node['air']
+								data[ivm] = node["air"]
 							end
 							ivm = ivm + a.ystride
 						end
