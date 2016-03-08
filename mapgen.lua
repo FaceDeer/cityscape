@@ -115,14 +115,14 @@ function cityscape.generate(minp, maxp, seed)
 	local count = 0
 	local min = 31000
 	local max = -31000
+	local border = 6
 	local city_block = true
 
 	for z = minp.z, maxp.z do
 		for x = minp.x, maxp.x do
 			index = index + 1
-			if x < minp.x + 8 or x > maxp.x - 8 or z < minp.z + 8 or z > maxp.z - 8 and heightmap[index] == minp.y - 1 or heightmap == maxp.y + 1 then
-				-- nop
-			else
+			-- One off values are likely to be errors.
+			if heightmap[index] ~= minp.y - 1 and heightmap ~= maxp.y + 1 then
 				-- Terrain going through minp.y or maxp.y causes problems,
 				-- since there's no practical way to tell if you're above
 				-- or below a city block.
@@ -130,7 +130,7 @@ function cityscape.generate(minp, maxp, seed)
 					city_block = false
 				end
 
-				if x == minp.x + 9 or z == minp.z + 9 or x == maxp.x - 9 or z == maxp.z - 9 then
+				if x == minp.x + (border + 1) or z == minp.z + (border + 1) or x == maxp.x - (border + 1) or z == maxp.z - (border + 1) then
 					if heightmap[index] < min then
 						min = heightmap[index]
 					end
@@ -190,27 +190,27 @@ function cityscape.generate(minp, maxp, seed)
 		local avg_xn, avg_xp, avg_zn, avg_zp = avg, avg, avg, avg
 		local ivm_xn, ivm_xp, ivm_zn, ivm_zp
 		local street, ramp, street_center_x, street_center_z, streetlight
-		local off_xn, off_xp, off_zn, off_zp = 6,6,6,6
+		local off_xn, off_xp, off_zn, off_zp = border, border, border, border
 
 		-- calculating connection altitude
-		ivm_xn = a:index(minp.x - 9, minp.y, math.floor(minp.z + rx))
-		ivm_xp = a:index(maxp.x + 9, minp.y, math.floor(minp.z + rx))
-		ivm_zn = a:index(math.floor(minp.x + rz), minp.y, minp.z - 9)
-		ivm_zp = a:index(math.floor(minp.x + rz), minp.y, maxp.z + 9)
+		ivm_xn = a:index(minp.x - 1, minp.y, math.floor(maxp.z - rx))
+		ivm_xp = a:index(maxp.x + 1, minp.y, math.floor(minp.z + rx))
+		ivm_zn = a:index(math.floor(maxp.x - rz), minp.y, minp.z - 1)
+		ivm_zp = a:index(math.floor(minp.x + rz), minp.y, maxp.z + 1)
 		for y = minp.y, maxp.y do
-			if data[ivm_xn] == node["road"] or data[ivm_xn] == node["concrete"] then
+			if table.contains(good_nodes, data[ivm_xn]) then
 				avg_xn = y
 				off_xn = 0
 			end
-			if data[ivm_xp] == node["road"] or data[ivm_xp] == node["concrete"] then
+			if table.contains(good_nodes, data[ivm_xp]) then
 				avg_xp = y
 				off_xp = 0
 			end
-			if data[ivm_zn] == node["road"] or data[ivm_zn] == node["concrete"] then
+			if table.contains(good_nodes, data[ivm_zn]) then
 				avg_zn = y
 				off_zn = 0
 			end
-			if data[ivm_zp] == node["road"] or data[ivm_zp] == node["concrete"] then
+			if table.contains(good_nodes, data[ivm_zp]) then
 				avg_zp = y
 				off_zp = 0
 			end
@@ -221,17 +221,16 @@ function cityscape.generate(minp, maxp, seed)
 			ivm_zp = ivm_zp + a.ystride
 		end
 
+		-- -200,300
 		for z = minp.z - off_zn, maxp.z + off_zp do
 			for x = minp.x - off_xn, maxp.x + off_xp do
 				if x < minp.x or x > maxp.x or z < minp.z or z > maxp.z then
 					ivm = a:index(x, minp.y, z)
 					for y = minp.y, maxp.y do
-						if data[ivm] == node['ignore'] or not table.contains(good_nodes, data[ivm]) then
-							if y <= avg then
-								data[ivm] = node['concrete']
-							else
-								data[ivm] = node['air']
-							end
+						if y <= avg then
+							data[ivm] = node['concrete']
+						else
+							data[ivm] = node['air']
 						end
 						ivm = ivm + a.ystride
 					end
