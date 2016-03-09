@@ -62,6 +62,7 @@ local data = {}
 local p2data = {}
 local bd = {}
 local pd = {}
+local sw = {}
 
 
 function cityscape.generate(minp, maxp, seed)
@@ -148,11 +149,15 @@ function cityscape.generate(minp, maxp, seed)
 			if not pd[i] then
 				pd[i] = {}
 			end
+			if not sw[i] then
+				sw[i] = {}
+			end
 			for j = 1,mz do
 				if not bd[i][j] then
 					bd[i][j] = {}
 				end
 				pd[i][j] = {}
+				sw[i][j] = math.random(0,2)
 				for k = 0,dx+1 do
 					if not bd[i][j][k] then
 						bd[i][j][k] = {}
@@ -284,7 +289,7 @@ function cityscape.generate(minp, maxp, seed)
 					elseif sewer and street and street_avg == avg and y <= avg and manhole then
 						data[ivm] = node["ladder"]
 						p2data[ivm] = 4
-					elseif sewer and street and y < minp.y + 1 then
+					elseif sewer and street and (y - minp.y) < sw[math.min(qx,3)][math.min(qz,3)] then
 						data[ivm] = node["water_source"]
 					elseif sewer and street and y < minp.y + 3 then
 						data[ivm] = node["air"]
@@ -367,7 +372,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	vm:set_data(data)
 	vm:set_param2_data(p2data)
-	--vm:set_lighting({day = 0, night = 0})
+	vm:set_lighting({day = 0, night = 0})
 	vm:calc_lighting()
 	vm:update_liquids()
 	vm:write_to_map()
