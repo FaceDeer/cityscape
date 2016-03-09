@@ -28,7 +28,7 @@ minetest.register_node("cityscape:road_yellow_line", {
 
 minetest.register_node("cityscape:plaster", {
 	description = "Plaster",
-	tiles = {"cityscape_plaster.png"},
+	tiles = {"default_desert_stone.png^[colorize:#8C8175:225"},
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1, oddly_breakable_by_hand = 1},
 })
@@ -42,7 +42,7 @@ stairs.register_stair_and_slab("road", "cityscape:road",
 
 minetest.register_node("cityscape:concrete", {
 	description = "Concrete",
-	tiles = {"cityscape_concrete.png"},
+	tiles = {"default_stone.png"},
 	groups = {cracky = 3, stone = 1},
 	drop = "default:cobble",
 	sounds = default.node_sound_stone_defaults(),
@@ -50,18 +50,18 @@ minetest.register_node("cityscape:concrete", {
 })
 
 local newnode = cityscape.clone_node("cityscape:concrete")
-newnode.tiles = {"cityscape_concrete.png^[colorize:#964B00:40"}
+newnode.tiles = {"default_stone.png^[colorize:#964B00:40"}
 minetest.register_node("cityscape:concrete2", newnode)
-newnode.tiles = {"cityscape_concrete.png^[colorize:#FF0000:20"}
+newnode.tiles = {"default_stone.png^[colorize:#FF0000:20"}
 minetest.register_node("cityscape:concrete3", newnode)
-newnode.tiles = {"cityscape_concrete.png^[colorize:#4682B4:10"}
+newnode.tiles = {"default_stone.png^[colorize:#4682B4:10"}
 minetest.register_node("cityscape:concrete4", newnode)
-newnode.tiles = {"cityscape_concrete.png^[colorize:#000000:40"}
+newnode.tiles = {"default_stone.png^[colorize:#000000:40"}
 minetest.register_node("cityscape:concrete5", newnode)
 
 minetest.register_node("cityscape:floor_ceiling", {
 	description = "Floor/Ceiling",
-	tiles = {"cityscape_floor.png", "cityscape_ceiling.png", "cityscape_concrete.png"},
+	tiles = {"cityscape_floor.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
 	groups = {cracky = 3, stone = 1},
 	drop = "default:cobble",
@@ -81,7 +81,7 @@ minetest.register_node("cityscape:sidewalk", {
 
 minetest.register_node("cityscape:roof", {
 	description = "Roof",
-	tiles = {"cityscape_tarmac.png", "cityscape_ceiling.png", "cityscape_concrete.png"},
+	tiles = {"cityscape_tarmac.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
 	groups = {cracky = 3, stone = 1},
 	drop = "default:cobble",
@@ -99,7 +99,7 @@ default.register_fence("cityscape:fence_steel", {
 
 minetest.register_node("cityscape:gargoyle", {
 	description = "Concrete",
-	tiles = {"cityscape_statue.png"},
+	tiles = {"default_stone.png^[colorize:#000000:60"},
 	paramtype = "light",
 	paramtype2 = "facedir",
 	drawtype = "nodebox",
@@ -141,7 +141,7 @@ minetest.register_node("cityscape:streetlight", {
 
 minetest.register_node("cityscape:light_panel", {
 	description = "Light Panel",
-	tiles = {"cityscape_light_panel.png"},
+	tiles = {"default_sandstone.png"},
 	light_source = 14,
 	paramtype = "light",
 	paramtype2 = "facedir",
