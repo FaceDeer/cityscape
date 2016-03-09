@@ -86,7 +86,7 @@ end
 
 local function gotham(data, param, dx, dy, dz)
 	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors, conc
-	local dir
+	local dir, y
 
 	local c = math.random(5)
 	if c == 1 then

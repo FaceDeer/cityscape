@@ -41,6 +41,8 @@ do
 		{"desert_stone_brick", "default:desert_stonebrick", true},
 		{"plaster", "cityscape:plaster"},
 		{"glass", "default:glass"},
+		{"ladder", "default:ladder"},
+		{"manhole_cover", "doors:trapdoor_steel"},
 		{"light_panel", "cityscape:light_panel"},
 		{"streetlight", "cityscape:streetlight"},
 		{"gargoyle", "cityscape:gargoyle"},
@@ -191,9 +193,11 @@ function cityscape.generate(minp, maxp, seed)
 
 		local px, pz, qx, qz, street_avg, dir, diro
 		local avg_xn, avg_xp, avg_zn, avg_zp = avg, avg, avg, avg
-		local ivm_xn, ivm_xp, ivm_zn, ivm_zp
+		local ivm_xn, ivm_xp, ivm_zn, ivm_zp, sewer, manhole
 		local street, ramp, street_center_x, street_center_z, streetlight
 		local off_xn, off_xp, off_zn, off_zp = border, border, border, border
+
+		sewer = avg - minp.y > 5
 
 		-- calculating connection altitude
 		-- Border data is frequently incorrect. However, there's not
@@ -261,6 +265,7 @@ function cityscape.generate(minp, maxp, seed)
 				street_center_z = (pz == math.floor(streetw / 2) and px / 2 == math.floor(px / 2)) and not (px < streetw and pz < streetw)
 				ramp = (px < streetw and ((qx > 1 or mx == 1) and qx <= mx)) or (pz < streetw and ((qz > 1 or mz == 1) and qz <= mz))
 				streetlight = px == streetw and pz == streetw
+				manhole = (px == math.floor(streetw / 2)) and (pz == math.floor(streetw / 2))
 
 				-- calculating ramps
 				street_avg = avg
@@ -295,6 +300,16 @@ function cityscape.generate(minp, maxp, seed)
 						-- ramp up
 						data[ivm] = node["stair_road"]
 						p2data[ivm] = dir
+					elseif sewer and street and y == avg + 1 and manhole then
+						data[ivm] = node["manhole_cover"]
+						p2data[ivm] = 0
+					elseif sewer and street and y <= avg and manhole then
+						data[ivm] = node["ladder"]
+						p2data[ivm] = 4
+					elseif sewer and street and y < minp.y + 1 then
+						data[ivm] = node["water_source"]
+					elseif sewer and street and y < minp.y + 3 then
+						data[ivm] = node["air"]
 					elseif y == avg and (not ramp or street_avg == avg) and street_center_x then
 						data[ivm] = node["road_yellow_line"]
 					elseif y == avg and (not ramp or street_avg == avg) and street_center_z then
