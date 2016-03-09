@@ -25,4 +25,44 @@ dofile(cityscape.path .. "/nodes.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")
 
+cityscape.players_to_check = {}
+
+function cityscape.respawn(player)
+	cityscape.players_to_check[#cityscape.players_to_check+1] = player:get_player_name()
+end
+
+function cityscape.unearth(dtime)
+	for i, player_name in pairs(cityscape.players_to_check) do
+		local player = minetest.get_player_by_name(player_name)
+		if not player then
+			return
+		end
+		local pos = player:getpos()
+		if not pos then
+			return
+		end
+		local count = 0
+		local node = minetest.get_node_or_nil(pos)
+		while node do
+			if node.name == 'air' then
+				player:setpos(pos)
+				table.remove(cityscape.players_to_check, i)
+				if count > 1 then
+					print("*** Cityscape unearthed "..player_name.." from "..count.." meters below.")
+				end
+				return
+			elseif node.name == "ignore" then
+				return
+			else
+				pos.y = pos.y + 1
+				count = count + 1
+			end
+			node = minetest.get_node_or_nil(pos)
+			end
+	end
+end
+
+minetest.register_on_newplayer(cityscape.respawn)
+minetest.register_on_respawnplayer(cityscape.respawn)
 minetest.register_on_generated(cityscape.generate)
+minetest.register_globalstep(cityscape.unearth)
