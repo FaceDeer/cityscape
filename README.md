@@ -1,9 +1,9 @@
 # cityscape
 City landscape for Minetest
 
-This mod makes very rudimentary city blocks. It's more of an experiment than anything, but might be fun for someone to play with. Right now it generates nearly identical buildings and streets. It might be fun for zombie attack games or just blowing things up.
+This mod makes very rudimentary city blocks. It's more of an experiment than anything, but might be fun for someone to play with. Right now it generates a small selection of buildings and simple streets and sewers. It could be terrain for zombie attack games or just blowing things up.
 
-In the future, I hope to make the streets connect properly between chunks and put some stairs and possibly walls inside the buildings.
+City blocks will generate any place that's relatively flat and largely above water level. Natural terrain is left alone everywhere else.
 
 ![screenshot](https://github.com/duane-r/cityscape/raw/master/textures/screenshot05.jpg)
 
