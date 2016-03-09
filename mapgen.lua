@@ -278,10 +278,10 @@ function cityscape.generate(minp, maxp, seed)
 						-- ramp up
 						data[ivm] = node["stair_road"]
 						p2data[ivm] = dir
-					elseif sewer and street and y == avg + 1 and manhole then
+					elseif sewer and street and street_avg == avg and y == avg + 1 and manhole then
 						data[ivm] = node["manhole_cover"]
 						p2data[ivm] = 0
-					elseif sewer and street and y <= avg and manhole then
+					elseif sewer and street and street_avg == avg and y <= avg and manhole then
 						data[ivm] = node["ladder"]
 						p2data[ivm] = 4
 					elseif sewer and street and y < minp.y + 1 then
