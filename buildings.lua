@@ -94,7 +94,12 @@ local function gotham(data, param, dx, dy, dz)
 	else
 		conc = "concrete"..c
 	end
-	floors = math.random(2, math.floor(dy / 4) - 1)
+
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	-- all this for gargoyles...
 	if math.random(2) == 1 and floors > 5 then
@@ -180,10 +185,6 @@ local function gotham(data, param, dx, dy, dz)
 		end
 	end
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=2,y=((f-1)*4),z=2}, {x=dx-1,y=(f*4-1),z=dz-1}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=3,y=((f-1)*4),z=3}, {x=dx-2,y=(f*4-1),z=dz-2})
@@ -203,7 +204,12 @@ local function glass_and_steel(data, param, dx, dy, dz)
 	else
 		conc = "concrete"..c
 	end
-	floors = math.random(2, math.floor(dy / 4) - 1)
+
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	for z = 1,dz do
 		for x = 1,dx do
@@ -241,10 +247,6 @@ local function glass_and_steel(data, param, dx, dy, dz)
 		end
 	end
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
@@ -258,7 +260,12 @@ end
 
 local function simple(data, param, dx, dy, dz, slit)
 	local develop, wall_x, wall_z, floors, conc, c
-	floors = math.random(2, math.floor(dy / 4) - 1)
+
+	local ra = 0
+	if math.random(2) == 1 then
+		ra = 1
+	end
+	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	if floors < 6 then
 		c = math.random(9)
@@ -316,10 +323,6 @@ local function simple(data, param, dx, dy, dz, slit)
 		end
 	end
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
