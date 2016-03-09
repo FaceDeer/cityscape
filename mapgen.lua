@@ -241,9 +241,9 @@ function cityscape.generate(minp, maxp, seed)
 				if x < minp.x or x > maxp.x or z < minp.z or z > maxp.z then
 					ivm = a:index(x, minp.y, z)
 					for y = minp.y, maxp.y do
-						if y <= avg then
+						if y <= avg and y > min - 5 then
 							data[ivm] = node["concrete"]
-						else
+						elseif y > min - 5 then
 							data[ivm] = node["air"]
 						end
 						ivm = ivm + a.ystride
@@ -318,18 +318,18 @@ function cityscape.generate(minp, maxp, seed)
 					elseif y == street_avg and ramp then
 						-- ramp normal
 						data[ivm] = node["road"]
-					elseif y < street_avg and ramp then
+					elseif y < street_avg and y > min - 5 and ramp then
 						-- ramp support
 						data[ivm] = node["stone"]
 					elseif y == avg + 1 and streetlight then
 						data[ivm] = node["streetlight"]
 					elseif y == avg and street and not ramp then
 						data[ivm] = node["road"]
-					elseif y < avg and street and not ramp then
+					elseif y < avg and y > min - 5 and street and not ramp then
 						data[ivm] = node["stone"]
 					elseif y == avg and not street then
 						data[ivm] = node["sidewalk"]
-					elseif y < avg and not street then
+					elseif y < avg and y > min - 5 and not street then
 						data[ivm] = node["stone"]
 						-- safety barriers
 					elseif not ramp and x == minp.x and z ~= minp.z and z ~= maxp.z and y == avg + 1 and street_avg < avg then
@@ -348,7 +348,7 @@ function cityscape.generate(minp, maxp, seed)
 						data[ivm] = node["fence"]
 					elseif not ramp and z == maxp.z and x ~= minp.x and x ~= maxp.x and y == avg + 1 and street_avg > avg and street_avg - avg < 16 then
 						data[ivm + a.ystride * (street_avg - avg) + a.zstride] = node["fence"]
-					else
+					elseif y > min - 5 then
 						data[ivm] = node["air"]
 					end
 
