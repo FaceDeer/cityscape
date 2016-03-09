@@ -1,25 +1,3 @@
-function math.round(x)
-	return math.floor(x + 0.5)
-end
-
-
-local function touch(pmin1, pmax1, pmin2, pmax2)
-	if not ((pmin1.x <= pmin2.x and pmin2.x <= pmax1.x) or (pmin2.x <= pmin1.x and pmin1.x <= pmax2.x)) then
-		return false
-	end
-
-	if not ((pmin1.y <= pmin2.y and pmin2.y <= pmax1.y) or (pmin2.y <= pmin1.y and pmin1.y <= pmax2.y)) then
-		return false
-	end
-
-	if not ((pmin1.z <= pmin2.z and pmin2.z <= pmax1.z) or (pmin2.z <= pmin1.z and pmin1.z <= pmax2.z)) then
-		return false
-	end
-
-	return true
-end
-
-
 cityscape.node = {}
 local node = cityscape.node
 local good_nodes = {}
@@ -157,7 +135,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	-- If the average ground level is too high, there won't
 	-- be enough room for any buildings.
-	avg = math.round(avg / count)
+	avg = math.floor((avg / count) + 0.5)
 	if avg > minp.y + 67 or avg < 1 then
 		city_block = false
 	end
