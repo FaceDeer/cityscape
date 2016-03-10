@@ -10,10 +10,28 @@ minetest.register_node("cityscape:silver_glass", {
 	groups = {cracky = 3, level=2},
 	sounds = default.node_sound_stone_defaults(),
 })
+newnode = cityscape.clone_node("cityscape:silver_glass")
+newnode.tiles = {"cityscape_plate_glass_broken.png"}
+newnode.walkable = false
+minetest.register_node("cityscape:silver_glass_broken", newnode)
 
 minetest.register_node("cityscape:road", {
 	description = "Road",
 	tiles = {"cityscape_tarmac.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 1, level = 1},
+})
+
+minetest.register_node("cityscape:road_broken", {
+	description = "Road",
+	tiles = {"cityscape_tarmac.png^cityscape_broken_3.png"},
+	paramtype = "light",
+	drawtype = "nodebox",
+	node_box = { type = "fixed",
+		fixed = {
+			{0.5, 0.3, 0.5, -0.5, -0.5, -0.5}
+		}
+	},
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1},
 })
@@ -32,6 +50,9 @@ minetest.register_node("cityscape:plaster", {
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 1, level = 1, oddly_breakable_by_hand = 1},
 })
+newnode = cityscape.clone_node("cityscape:plaster")
+newnode.tiles = {"(default_desert_stone.png^[colorize:#8C8175:225)^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:plaster_broken", newnode)
 
 stairs.register_stair_and_slab("road", "cityscape:road",
 	{cracky = 1, level = 1},
@@ -48,6 +69,9 @@ minetest.register_node("cityscape:concrete", {
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 })
+newnode = cityscape.clone_node("cityscape:concrete")
+newnode.tiles = {"default_stone.png^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:concrete_broken", newnode)
 
 local newnode = cityscape.clone_node("cityscape:concrete")
 newnode.tiles = {"default_stone.png^[colorize:#964B00:40"}
@@ -59,6 +83,16 @@ minetest.register_node("cityscape:concrete4", newnode)
 newnode.tiles = {"default_stone.png^[colorize:#000000:40"}
 minetest.register_node("cityscape:concrete5", newnode)
 
+local newnode = cityscape.clone_node("cityscape:concrete_broken")
+newnode.tiles = {"default_stone.png^[colorize:#964B00:40^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:concrete2_broken", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#FF0000:20^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:concrete3_broken", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#4682B4:10^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:concrete4_broken", newnode)
+newnode.tiles = {"default_stone.png^[colorize:#000000:40^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:concrete5_broken", newnode)
+
 minetest.register_node("cityscape:floor_ceiling", {
 	description = "Floor/Ceiling",
 	tiles = {"cityscape_floor.png", "cityscape_ceiling.png", "default_stone.png"},
@@ -68,7 +102,9 @@ minetest.register_node("cityscape:floor_ceiling", {
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 })
-
+newnode = cityscape.clone_node("cityscape:floor_ceiling")
+newnode.tiles = {"cityscape_floor.png^cityscape_broken_3.png", "cityscape_ceiling.png^cityscape_broken_3.png", "default_stone.png^cityscape_broken_3.png"}
+minetest.register_node("cityscape:floor_ceiling_broken", newnode)
 
 minetest.register_node("cityscape:sidewalk", {
 	description = "Sidewalk",
@@ -78,6 +114,9 @@ minetest.register_node("cityscape:sidewalk", {
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 })
+newnode = cityscape.clone_node("cityscape:sidewalk")
+newnode.tiles = {"cityscape_sidewalk.png^cityscape_broken_3.png"}
+minetest.register_node("cityscape:sidewalk_broken", newnode)
 
 minetest.register_node("cityscape:roof", {
 	description = "Roof",
@@ -138,6 +177,9 @@ minetest.register_node("cityscape:streetlight", {
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
+newnode = cityscape.clone_node("cityscape:streetlight")
+newnode.light_source = 0
+minetest.register_node("cityscape:streetlight_broken", newnode)
 
 minetest.register_node("cityscape:light_panel", {
 	description = "Light Panel",
@@ -154,3 +196,22 @@ minetest.register_node("cityscape:light_panel", {
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
+newnode = cityscape.clone_node("cityscape:light_panel")
+newnode.light_source = 0
+minetest.register_node("cityscape:light_panel_broken", newnode)
+
+newnode = cityscape.clone_node("default:brick")
+newnode.tiles = {"default_brick.png^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:brick_broken", newnode)
+
+newnode = cityscape.clone_node("default:sandstonebrick")
+newnode.tiles = {"default_sandstone_brick.png^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:sandstonebrick_broken", newnode)
+
+newnode = cityscape.clone_node("default:stonebrick")
+newnode.tiles = {"default_stone_brick.png^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:stonebrick_broken", newnode)
+
+newnode = cityscape.clone_node("default:desert_stonebrick")
+newnode.tiles = {"default_desert_stone_brick.png^cityscape_broken_3_low.png"}
+minetest.register_node("cityscape:desert_stonebrick_broken", newnode)

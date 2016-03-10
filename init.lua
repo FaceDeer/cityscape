@@ -14,6 +14,10 @@ cityscape.divisions_z = tonumber(minetest.setting_get('cityscape_divisions_z')) 
 if cityscape.divisions_z < 0 or cityscape.divisions_z > 4 then
 	cityscape.divisions_z = 3
 end
+cityscape.desolation = tonumber(minetest.setting_get('cityscape_desolation')) or 0
+if cityscape.desolation < 0 or cityscape.desolation > 10 then
+	cityscape.desolation = 0
+end
 
 function cityscape.clone_node(name)
 	local node = minetest.registered_nodes[name]

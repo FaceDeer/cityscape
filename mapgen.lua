@@ -1,52 +1,70 @@
 cityscape.node = {}
 local node = cityscape.node
 local good_nodes = {}
+local grassy = {}
 do
 	local nodes = {
 		-- Ground nodes
-		{"stone", "default:stone"},
-		{"concrete", "cityscape:concrete", true},
-		{"concrete2", "cityscape:concrete2", true},
-		{"concrete3", "cityscape:concrete3", true},
-		{"concrete4", "cityscape:concrete4", true},
-		{"concrete5", "cityscape:concrete5", true},
-		{"sidewalk", "cityscape:sidewalk", true},
-		{"floor_ceiling", "cityscape:floor_ceiling", true},
-		{"roof", "cityscape:roof", true},
-		{"brick", "default:brick", true},
-		{"sandstone_brick", "default:sandstonebrick", true},
-		{"stone_brick", "default:stonebrick", true},
-		{"desert_stone_brick", "default:desert_stonebrick", true},
-		{"plaster", "cityscape:plaster"},
-		{"glass", "default:glass"},
-		{"ladder", "default:ladder"},
-		{"manhole_cover", "doors:trapdoor_steel"},
-		{"light_panel", "cityscape:light_panel"},
-		{"streetlight", "cityscape:streetlight"},
-		{"gargoyle", "cityscape:gargoyle"},
-		{"fence", "cityscape:fence_steel"},
-		{"road", "cityscape:road", true},
-		{"road_yellow_line", "cityscape:road_yellow_line", true},
-		{"plate_glass", "cityscape:silver_glass", true},
-		{"stair_road", "stairs:stair_road", true},
-		{"stair_stone", "stairs:stair_stone"},
-		{"stair_pine", "stairs:stair_pine_wood"},
-		{"stair_wood", "stairs:stair_wood"},
-		{"dirt", "default:dirt"},
-		{"dirt_with_grass", "default:dirt_with_grass"},
-		{"dirt_with_dry_grass", "default:dirt_with_dry_grass"},
-		{"dirt_with_snow", "default:dirt_with_snow"},
-		{"sand", "default:sand"},
-		{"sandstone", "default:sandstone"},
-		{"desert_sand", "default:desert_sand"},
-		{"gravel", "default:gravel"},
-		{"desertstone", "default:desert_stone"},
-		{"river_water_source", "default:river_water_source"},
-		{"water_source", "default:water_source"},
-		{"lava", "default:lava_source"},
+		{"stone", "default:stone", false, false},
+		{"concrete", "cityscape:concrete", true, false},
+		{"concrete2", "cityscape:concrete2", true, false},
+		{"concrete3", "cityscape:concrete3", true, false},
+		{"concrete4", "cityscape:concrete4", true, false},
+		{"concrete5", "cityscape:concrete5", true, false},
+		{"sidewalk", "cityscape:sidewalk", true, false},
+		{"floor_ceiling", "cityscape:floor_ceiling", true, false},
+		{"roof", "cityscape:roof", true, false},
+		{"grass", "default:grass_2", false, false},
+		{"brick", "default:brick", true, false},
+		{"sandstone_brick", "default:sandstonebrick", true, false},
+		{"stone_brick", "default:stonebrick", true, false},
+		{"desert_stone_brick", "default:desert_stonebrick", true, false},
+		{"concrete_broken", "cityscape:concrete_broken", true, true},
+		{"concrete2_broken", "cityscape:concrete2_broken", true, false},
+		{"concrete3_broken", "cityscape:concrete3_broken", true, false},
+		{"concrete4_broken", "cityscape:concrete4_broken", true, false},
+		{"concrete5_broken", "cityscape:concrete5_broken", true, false},
+		{"sidewalk_broken", "cityscape:sidewalk_broken", true, true},
+		{"brick_broken", "cityscape:brick_broken", false, false},
+		{"sandstone_brick_broken", "cityscape:sandstonebrick_broken", true, false},
+		{"stone_brick_broken", "cityscape:stonebrick_broken", true, false},
+		{"desert_stone_brick_broken", "cityscape:desert_stonebrick_broken", true, false},
+		{"floor_ceiling_broken", "cityscape:floor_ceiling_broken", true, false},
+		{"plaster", "cityscape:plaster", false, false},
+		{"plaster_broken", "cityscape:plaster_broken", false, false},
+		{"glass", "default:glass", false, false},
+		{"ladder", "default:ladder", false, false},
+		{"manhole_cover", "doors:trapdoor_steel", false, false},
+		{"light_panel", "cityscape:light_panel", false, false},
+		{"light_panel_broken", "cityscape:light_panel_broken", false, false},
+		{"streetlight", "cityscape:streetlight", false, false},
+		{"streetlight_broken", "cityscape:streetlight_broken", false, false},
+		{"gargoyle", "cityscape:gargoyle", false, false},
+		{"fence", "cityscape:fence_steel", false, false},
+		{"road", "cityscape:road", true, false},
+		{"road_broken", "cityscape:road_broken", true, false},
+		{"road_yellow_line", "cityscape:road_yellow_line", true, false},
+		{"plate_glass", "cityscape:silver_glass", true, false},
+		{"plate_glass_broken", "cityscape:silver_glass_broken", false, false},
+		{"stair_road", "stairs:stair_road", true, false},
+		{"stair_stone", "stairs:stair_stone", false, false},
+		{"stair_pine", "stairs:stair_pine_wood", false, false},
+		{"stair_wood", "stairs:stair_wood", false, false},
+		{"dirt", "default:dirt", false, false},
+		{"dirt_with_grass", "default:dirt_with_grass", false, false},
+		{"dirt_with_dry_grass", "default:dirt_with_dry_grass", false, false},
+		{"dirt_with_snow", "default:dirt_with_snow", false, false},
+		{"sand", "default:sand", false, false},
+		{"sandstone", "default:sandstone", false, false},
+		{"desert_sand", "default:desert_sand", false, false},
+		{"gravel", "default:gravel", false, false},
+		{"desertstone", "default:desert_stone", false, false},
+		{"river_water_source", "default:river_water_source", false, false},
+		{"water_source", "default:water_source", false, false},
+		{"lava", "default:lava_source", false, false},
 
-		{"air", "air"},
-		{"ignore", "ignore"},
+		{"air", "air", false, false},
+		{"ignore", "ignore", false, false},
 	}
 
 	for _, i in pairs(nodes) do
@@ -54,6 +72,18 @@ do
 		if i[3] then
 			good_nodes[node[i[1]]] = true
 		end
+		if i[4] then
+			grassy[node[i[1]]] = true
+		end
+	end
+end
+
+
+local function breaker(node)
+	if cityscape.desolation > 0 and math.random(10) <= cityscape.desolation then
+		return node.."_broken"
+	else
+		return node
 	end
 end
 
@@ -225,7 +255,7 @@ function cityscape.generate(minp, maxp, seed)
 					ivm = a:index(x, minp.y, z)
 					for y = minp.y, maxp.y do
 						if y <= avg and y > min - 5 then
-							data[ivm] = node["concrete"]
+							data[ivm] = node[breaker("concrete")]
 						elseif y > min - 5 then
 							data[ivm] = node["air"]
 						end
@@ -284,11 +314,19 @@ function cityscape.generate(minp, maxp, seed)
 						data[ivm] = node["stair_road"]
 						p2data[ivm] = dir
 					elseif sewer and street and street_avg == avg and y == avg + 1 and manhole then
-						data[ivm] = node["manhole_cover"]
-						p2data[ivm] = 0
+						if cityscape.desolation > 0 and math.random(6) <= cityscape.desolation then
+							data[ivm] = node["air"]
+						else
+							data[ivm] = node["manhole_cover"]
+							p2data[ivm] = 0
+						end
 					elseif sewer and street and street_avg == avg and y <= avg and manhole then
-						data[ivm] = node["ladder"]
-						p2data[ivm] = 4
+						if cityscape.desolation > 0 then
+							data[ivm] = node["air"]
+						else
+							data[ivm] = node["ladder"]
+							p2data[ivm] = 4
+						end
 					elseif sewer and street and (y - minp.y) < sw[math.min(qx,3)][math.min(qz,3)] then
 						data[ivm] = node["water_source"]
 					elseif sewer and street and y < minp.y + 3 then
@@ -300,18 +338,18 @@ function cityscape.generate(minp, maxp, seed)
 						p2data[ivm] = 21
 					elseif y == street_avg and ramp then
 						-- ramp normal
-						data[ivm] = node["road"]
+						data[ivm] = node[breaker("road")]
 					elseif y < street_avg and y > min - 5 and ramp then
 						-- ramp support
 						data[ivm] = node["stone"]
 					elseif y == avg + 1 and streetlight then
-						data[ivm] = node["streetlight"]
+						data[ivm] = node[breaker("streetlight")]
 					elseif y == avg and street and not ramp then
-						data[ivm] = node["road"]
+						data[ivm] = node[breaker("road")]
 					elseif y < avg and y > min - 5 and street and not ramp then
 						data[ivm] = node["stone"]
 					elseif y == avg and not street then
-						data[ivm] = node["sidewalk"]
+						data[ivm] = node[breaker("sidewalk")]
 					elseif y < avg and y > min - 5 and not street then
 						data[ivm] = node["stone"]
 						-- safety barriers
@@ -365,6 +403,20 @@ function cityscape.generate(minp, maxp, seed)
 				for _, p in pairs(pd[qx][qz]) do
 					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + p[1] - 1, avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + lz + p[3] - 1)
 					p2data[ivm] = p[4]
+				end
+			end
+		end
+
+		if cityscape.desolation > 0 then
+			for z = minp.z - off_zn, maxp.z + off_zp do
+				for x = minp.x - off_xn, maxp.x + off_xp do
+					ivm = a:index(x, minp.y, z)
+					for y = minp.y, maxp.y do
+						if grassy[data[ivm]] and math.random(5) == 1 and data[ivm+a.ystride] == node["air"] then
+							data[ivm+a.ystride] = node["grass"]
+						end
+						ivm = ivm + a.ystride
+					end
 				end
 			end
 		end

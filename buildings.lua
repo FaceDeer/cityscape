@@ -1,12 +1,27 @@
 local node = cityscape.node
 
 
+local function breaker(node)
+	if math.random(50) <= cityscape.desolation then
+		return "air"
+	elseif cityscape.desolation > 0 and math.random(10) <= cityscape.desolation then
+		return node.."_broken"
+	else
+		return node
+	end
+end
+
+
 local function lights(data, param, pos1, pos2)
 	local y = math.max(pos2.y, pos1.y)
 	for z = pos1.z,pos2.z do
 		for x = pos1.x,pos2.x do
 			if (data[x][y][z] == node["air"] or data[x][y][z] == nil) and (data[x][y+1][z] == node["floor_ceiling"] or data[x][y+1][z] == node["roof"]) and math.random(20) == 1 then
-				data[x][y][z] = node["light_panel"]
+				if cityscape.desolation > 0 then
+					data[x][y][z] = node["light_panel_broken"]
+				else
+					data[x][y][z] = node["light_panel"]
+				end
 				param[#param+1] = {x, y, z, 20} -- 20-23
 			end
 		end
@@ -22,12 +37,12 @@ local function roof_box(data, off, sy, dx, dz, tex)
 					if y < sy + 3 and x == dx - off + 1 and z == math.floor(dz / 2) then
 						data[x][y][z] = node["air"]
 					else
-						data[x][y][z] = tex
+						data[x][y][z] = node[breaker(tex)]
 					end
 				end
 			end
 			if z > off and z < dz-off+1 and x > off and x < dx-off+1 then
-				data[x][sy+3][z] = node["roof"]
+				data[x][sy+3][z] = node[breaker("roof")]
 			end
 		end
 	end
@@ -57,7 +72,7 @@ local function stairwell(data, param, pos1, pos2, left)
 						elseif not left and x == 3 and z == 6+dz and y < 3 then
 							data[x + px][y + py][z + pz] = node["air"]
 						else
-							data[x + px][y + py][z + pz] = node["plaster"]
+							data[x + px][y + py][z + pz] = node[breaker("plaster")]
 						end
 					end
 				end
@@ -85,8 +100,8 @@ end
 
 
 local function gotham(data, param, dx, dy, dz)
-	local develop, wall_x, wall_x_2, wall_z, wall_z_2, floors, conc
-	local dir, y
+	local develop, wall_x, wall_x_2, wall_z, wall_z_2
+	local dir, y, floors, conc
 
 	local c = math.random(5)
 	if c == 1 then
@@ -138,45 +153,45 @@ local function gotham(data, param, dx, dy, dz)
 			for y = 0,(floors * 4) do
 				if y % 4 == 0 and x > 2 and z > 2 and x < dx - 1 and z < dz - 1 then
 					if floors * 4 - y < 4 then
-						data[x][y][z] = node["roof"]
+						data[x][y][z] = node[breaker("roof")]
 					else
-						data[x][y][z] = node["floor_ceiling"]
+						data[x][y][z] = node[breaker("floor_ceiling")]
 					end
 				elseif wall_x then
 					if y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif z % 5 == 4 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					else
 						data[x][y][z] = node["air"]
 					end
 				elseif wall_x_2 and develop then
 					if y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif z % 12 == 3 and y <= 2 and y > 0 then
 						data[x][y][z] = node["air"]
 					elseif y % 4 ~= 2 or z % 5 == 4 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					else
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					end
 				elseif wall_z then
 					if y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif x % 5 == 4 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					else
 						data[x][y][z] = node["air"]
 					end
 				elseif wall_z_2 and develop then
 					if y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif x % 12 == 3 and y <= 2 and y > 0 then
 						data[x][y][z] = node["air"]
 					elseif y % 4 ~= 2 or x % 5 == 4 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					else
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					end
 				else
 					data[x][y][z] = node["air"]
@@ -191,7 +206,7 @@ local function gotham(data, param, dx, dy, dz)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, node[conc])
+		roof_box(data, 6, floors * 4, dx, dz, conc)
 	end
 end
 
@@ -218,29 +233,29 @@ local function glass_and_steel(data, param, dx, dy, dz)
 			for y = 0,(floors * 4) do
 				if y % 4 == 0 and x > 1 and z > 1 and x < dx and z < dz then
 					if floors * 4 - y < 4 then
-						data[x][y][z] = node["roof"]
+						data[x][y][z] = node[breaker("roof")]
 					else
-						data[x][y][z] = node["floor_ceiling"]
+						data[x][y][z] = node[breaker("floor_ceiling")]
 					end
 				elseif wall_x then
 					if (z - 2) % 5 == 2 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif z == 6 and y <= 2 then
 						data[x][y][z] = node["air"]
 					else
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					end
 				elseif wall_z then
 					if (x - 2) % 5 == 2 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif y == 0 then
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					elseif x == 6 and y <= 2 then
 						data[x][y][z] = node["air"]
 					else
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					end
 				end
 			end
@@ -253,7 +268,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, node[conc])
+		roof_box(data, 6, floors * 4, dx, dz, conc)
 	end
 end
 
@@ -294,29 +309,29 @@ local function simple(data, param, dx, dy, dz, slit)
 			for y = 0,(floors * 4) do
 				if y % 4 == 0 and x > 1 and z > 1 and x < dx and z < dz then
 					if floors * 4 == y then
-						data[x][y][z] = node["roof"]
+						data[x][y][z] = node[breaker("roof")]
 					else
-						data[x][y][z] = node["floor_ceiling"]
+						data[x][y][z] = node[breaker("floor_ceiling")]
 					end
 				elseif wall_x then
 					if z == 6 and y <= 2 and y > 0 then
 						data[x][y][z] = node["air"]
 					elseif slit and z % 2 == 0 and y % 4 > 1 then
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					elseif not slit and math.floor(z / 2) % 2 == 1 and y % 4 > 1 then
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					else
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					end
 				elseif wall_z then
 					if x == 6 and y <= 2 and y > 0 then
 						data[x][y][z] = node["air"]
 					elseif slit and x % 2 == 0 and y % 4 > 1 then
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					elseif not slit and math.floor(x / 2) % 2 == 1 and y % 4 > 1 then
-						data[x][y][z] = node["plate_glass"]
+						data[x][y][z] = node[breaker("plate_glass")]
 					else
-						data[x][y][z] = node[conc]
+						data[x][y][z] = node[breaker(conc)]
 					end
 				end
 			end
@@ -329,7 +344,7 @@ local function simple(data, param, dx, dy, dz, slit)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, node[conc])
+		roof_box(data, 6, floors * 4, dx, dz, conc)
 	end
 end
 
