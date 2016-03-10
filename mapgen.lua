@@ -343,7 +343,11 @@ function cityscape.generate(minp, maxp, seed)
 						-- ramp support
 						data[ivm] = node["stone"]
 					elseif y == avg + 1 and streetlight then
-						data[ivm] = node[breaker("streetlight")]
+						if cityscape.desolation > 0 then
+							data[ivm] = node[breaker("streetlight_broken")]
+						else
+							data[ivm] = node[breaker("streetlight")]
+						end
 					elseif y == avg and street and not ramp then
 						data[ivm] = node[breaker("road")]
 					elseif y < avg and y > min - 5 and street and not ramp then
