@@ -1,4 +1,6 @@
 
 The cityscape_broken_3.png, cityscape_broken_3_low.png and cityscape_plate_glass.png textures are based on the default minescape textures, and so fall under the LGPL2 license.
 
+The original car texture was created by Melkor, and is distributed under the CC-BY-NC-SA license (see the models directory).
+
 All other textures are CC0.

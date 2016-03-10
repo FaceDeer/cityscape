@@ -14,7 +14,9 @@ do
 		{"sidewalk", "cityscape:sidewalk", true, false},
 		{"floor_ceiling", "cityscape:floor_ceiling", true, false},
 		{"roof", "cityscape:roof", true, false},
-		{"grass", "default:grass_2", false, false},
+		{"grass1", "default:grass_1", false, false},
+		{"grass2", "default:grass_2", false, false},
+		{"grass3", "default:grass_3", false, false},
 		{"brick", "default:brick", true, false},
 		{"sandstone_brick", "default:sandstonebrick", true, false},
 		{"stone_brick", "default:stonebrick", true, false},
@@ -34,12 +36,20 @@ do
 		{"plaster_broken", "cityscape:plaster_broken", false, false},
 		{"glass", "default:glass", false, false},
 		{"ladder", "default:ladder", false, false},
+		{"car", "cityscape:car", false, false},
+		{"car_broken", "cityscape:car_broken", false, false},
 		{"manhole_cover", "doors:trapdoor_steel", false, false},
 		{"light_panel", "cityscape:light_panel", false, false},
 		{"light_panel_broken", "cityscape:light_panel_broken", false, false},
 		{"streetlight", "cityscape:streetlight", false, false},
 		{"streetlight_broken", "cityscape:streetlight_broken", false, false},
 		{"gargoyle", "cityscape:gargoyle", false, false},
+		{"rocks1", "cityscape:small_rocks1", false, false},
+		{"rocks2", "cityscape:small_rocks2", false, false},
+		{"rocks3", "cityscape:small_rocks3", false, false},
+		{"rocks4", "cityscape:small_rocks4", false, false},
+		{"rocks5", "cityscape:small_rocks5", false, false},
+		{"rocks6", "cityscape:small_rocks6", false, false},
 		{"fence", "cityscape:fence_steel", false, false},
 		{"road", "cityscape:road", true, false},
 		{"road_broken", "cityscape:road_broken", true, false},
@@ -416,12 +426,37 @@ function cityscape.generate(minp, maxp, seed)
 				for x = minp.x - off_xn, maxp.x + off_xp do
 					ivm = a:index(x, minp.y, z)
 					for y = minp.y, maxp.y do
-						if grassy[data[ivm]] and math.random(5) == 1 and data[ivm+a.ystride] == node["air"] then
-							data[ivm+a.ystride] = node["grass"]
+						if grassy[data[ivm]] and data[ivm+a.ystride] == node["air"] and math.random(5) == 1 then
+							data[ivm+a.ystride] = node["grass"..math.random(3)]
+						elseif good_nodes[data[ivm]] and data[ivm] ~= node["road_broken"] and data[ivm+a.ystride] == node["air"] and math.random(20) == 1 then
+							data[ivm+a.ystride] = node["rocks"..math.random(6)]
+							p2data[ivm+a.ystride] = math.random(4) - 1
 						end
 						ivm = ivm + a.ystride
 					end
 				end
+			end
+		end
+
+
+		local x, z
+		for i = 1,4 do
+			if math.random(2) == 1 then
+				x = minp.x + (math.random(mx) - 1) * rx + (math.random(2) - 1) * math.floor(streetw / 2) + lx + 1
+				z = math.random(math.floor(csize.z / 2)) + math.floor(csize.z / 4) + minp.z
+				ivm = a:index(x, avg + 1, z)
+				p2data[ivm] = math.random(2) * 2 - 2
+			else
+				z = minp.z + (math.random(mz) - 1) * rz + (math.random(2) - 1) * math.floor(streetw / 2) + lz + 1
+				x = math.random(math.floor(csize.x / 2)) + math.floor(csize.x / 4) + minp.x
+				ivm = a:index(x, avg + 1, z)
+				p2data[ivm] = math.random(2) * 2 - 1
+			end
+
+			if cityscape.desolation > 0 then
+				data[ivm] = node["car_broken"]
+			else
+				data[ivm] = node["car"]
 			end
 		end
 	end

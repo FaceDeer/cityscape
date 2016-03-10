@@ -26,6 +26,7 @@ function cityscape.clone_node(name)
 end
 
 dofile(cityscape.path .. "/nodes.lua")
+dofile(cityscape.path .. "/deco_rocks.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")
 

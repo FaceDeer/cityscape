@@ -173,7 +173,7 @@ minetest.register_node("cityscape:streetlight", {
 			{0.05, 2.5, -0.5, -0.05, 2.4, -0.1},
 			{0.1, 2.5, -0.7, -0.1, 2.35, -0.5},
 		} },
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -192,7 +192,7 @@ minetest.register_node("cityscape:light_panel", {
 		fixed = {
 			{-0.5, -0.5, -0.5, 0.5, -0.48, 0.5},
 		} },
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -215,3 +215,37 @@ minetest.register_node("cityscape:stonebrick_broken", newnode)
 newnode = cityscape.clone_node("default:desert_stonebrick")
 newnode.tiles = {"default_desert_stone_brick.png^cityscape_broken_3_low.png"}
 minetest.register_node("cityscape:desert_stonebrick_broken", newnode)
+
+minetest.register_node("cityscape:car_broken", {
+	description = "Car",
+	drawtype = 'mesh',
+	tiles = {"cityscape_car_wreck.png"},
+	use_texture_alpha = true,
+	mesh = "cityscape_car.obj",
+	selection_box = { type = "fixed",
+		fixed = {
+			{-0.9, -0.5, -1.5, 0.9, 0.6, 1.5},
+		} },
+	paramtype = "light",
+	paramtype2 = "facedir",
+	groups = {cracky = 1},
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_stone_defaults(),
+})
+
+minetest.register_node("cityscape:car", {
+	description = "Car",
+	drawtype = 'mesh',
+	tiles = {"cityscape_car_blue.png"},
+	use_texture_alpha = true,
+	mesh = "cityscape_car.obj",
+	selection_box = { type = "fixed",
+		fixed = {
+			{-0.9, -0.5, -1.5, 0.9, 0.6, 1.5},
+		} },
+	paramtype = "light",
+	paramtype2 = "facedir",
+	groups = {cracky = 1},
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_stone_defaults(),
+})
