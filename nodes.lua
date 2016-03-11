@@ -7,7 +7,7 @@ minetest.register_node("cityscape:silver_glass", {
 	light_source = 1,
 	use_texture_alpha = true,
 	is_ground_content = false,
-	groups = {cracky = 3, level=2},
+	groups = {cracky = 3, level=1},
 	sounds = default.node_sound_stone_defaults(),
 })
 newnode = cityscape.clone_node("cityscape:silver_glass")
@@ -19,7 +19,7 @@ minetest.register_node("cityscape:road", {
 	description = "Road",
 	tiles = {"cityscape_tarmac.png"},
 	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky = 1, level = 1},
+	groups = {cracky = 2, level = 1},
 })
 
 minetest.register_node("cityscape:road_broken", {
@@ -33,7 +33,7 @@ minetest.register_node("cityscape:road_broken", {
 		}
 	},
 	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky = 1, level = 1},
+	groups = {cracky = 2, level = 1},
 })
 
 minetest.register_node("cityscape:road_yellow_line", {
@@ -41,21 +41,21 @@ minetest.register_node("cityscape:road_yellow_line", {
 	tiles = {"cityscape_tarmac_yellow_line.png"},
 	paramtype2 = "facedir",
 	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky = 1, level = 1},
+	groups = {cracky = 2, level = 1},
 })
 
 minetest.register_node("cityscape:plaster", {
 	description = "Plaster",
 	tiles = {"default_desert_stone.png^[colorize:#8C8175:225"},
 	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky = 1, level = 1, oddly_breakable_by_hand = 1},
+	groups = {cracky = 3, level = 0, oddly_breakable_by_hand = 1},
 })
 newnode = cityscape.clone_node("cityscape:plaster")
 newnode.tiles = {"(default_desert_stone.png^[colorize:#8C8175:225)^cityscape_broken_3_low.png"}
 minetest.register_node("cityscape:plaster_broken", newnode)
 
 stairs.register_stair_and_slab("road", "cityscape:road",
-	{cracky = 1, level = 1},
+	{cracky = 2, level = 1},
 	{"cityscape_tarmac.png"},
 	"Ramp",
 	"Tarmac",
@@ -64,7 +64,7 @@ stairs.register_stair_and_slab("road", "cityscape:road",
 minetest.register_node("cityscape:concrete", {
 	description = "Concrete",
 	tiles = {"default_stone.png"},
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3, level=1, stone = 1},
 	drop = "default:cobble",
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
@@ -97,8 +97,21 @@ minetest.register_node("cityscape:floor_ceiling", {
 	description = "Floor/Ceiling",
 	tiles = {"cityscape_floor.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3, level=1, stone = 1},
 	drop = "default:cobble",
+	drop = {
+		max_items = 3,
+		items = {
+			{
+				items = {"default:cobble",},
+				rarity = 1,
+			},
+			{
+				items = {"default:copper_ingot",},
+				rarity = 6,
+			},
+		},
+	},
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 })
@@ -109,7 +122,7 @@ minetest.register_node("cityscape:floor_ceiling_broken", newnode)
 minetest.register_node("cityscape:sidewalk", {
 	description = "Sidewalk",
 	tiles = {"cityscape_sidewalk.png"},
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3, level=1, stone = 1},
 	drop = "default:cobble",
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
@@ -122,7 +135,7 @@ minetest.register_node("cityscape:roof", {
 	description = "Roof",
 	tiles = {"cityscape_tarmac.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3, level=1, stone = 1},
 	drop = "default:cobble",
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
@@ -154,7 +167,7 @@ minetest.register_node("cityscape:gargoyle", {
 			{-0.1, 0.23, -0.4, -0.17, 0.13, 0.4}, -- wing u
 			{-0.1, 0.13, -0.3, -0.17, 0.03, 0.3}, -- wing u
 		} },
-	groups = {cracky = 3, stone = 1},
+	groups = {cracky = 3, level=1, stone = 1},
 	drop = "default:cobble",
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
@@ -173,7 +186,7 @@ minetest.register_node("cityscape:streetlight", {
 			{0.05, 2.5, -0.5, -0.05, 2.4, -0.1},
 			{0.1, 2.5, -0.7, -0.1, 2.35, -0.5},
 		} },
-	groups = {cracky = 3},
+	groups = {cracky = 2, level=2},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -192,7 +205,7 @@ minetest.register_node("cityscape:light_panel", {
 		fixed = {
 			{-0.5, -0.5, -0.5, 0.5, -0.48, 0.5},
 		} },
-	groups = {cracky = 3},
+	groups = {cracky = 3, level=1, oddly_breakable_by_hand = 1},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -216,23 +229,6 @@ newnode = cityscape.clone_node("default:desert_stonebrick")
 newnode.tiles = {"default_desert_stone_brick.png^cityscape_broken_3_low.png"}
 minetest.register_node("cityscape:desert_stonebrick_broken", newnode)
 
-minetest.register_node("cityscape:car_broken", {
-	description = "Car",
-	drawtype = 'mesh',
-	tiles = {"cityscape_car_wreck.png"},
-	use_texture_alpha = true,
-	mesh = "cityscape_car.obj",
-	selection_box = { type = "fixed",
-		fixed = {
-			{-0.9, -0.5, -1.5, 0.9, 0.6, 1.5},
-		} },
-	paramtype = "light",
-	paramtype2 = "facedir",
-	groups = {cracky = 1},
-	on_place = minetest.rotate_and_place,
-	sounds = default.node_sound_stone_defaults(),
-})
-
 minetest.register_node("cityscape:car", {
 	description = "Car",
 	drawtype = 'mesh',
@@ -245,7 +241,23 @@ minetest.register_node("cityscape:car", {
 		} },
 	paramtype = "light",
 	paramtype2 = "facedir",
-	groups = {cracky = 1},
+	drop = {
+		max_items = 3,
+		items = {
+		{
+			items = {"default:steel_ingot 3",},
+			rarity = 1,
+		},
+		{
+			items = {"default:copper_ingot",},
+			rarity = 6,
+		},
+	},
+},
+	groups = {cracky = 1, level = 2},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
+newnode = cityscape.clone_node("cityscape:car")
+newnode.tiles = {"cityscape_car_wreck.png"}
+minetest.register_node("cityscape:car_broken", newnode)
