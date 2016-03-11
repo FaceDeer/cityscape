@@ -167,7 +167,6 @@ minetest.add_particlespawner({
 									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
 										minetest.env:set_node(p, {name='cityscape:napalm'})
 									else
-								--minetest.env:remove_node(p)
 								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
 								minetest.env:set_node(p, {name='fire:basic_flame'})
 									end
@@ -189,7 +188,6 @@ minetest.add_particlespawner({
 								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
 									minetest.env:set_node(p, {name='cityscape:napalm'})
 								else
-								--minetest.env:remove_node(p)
 								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
 								minetest.env:set_node(p, {name='fire:basic_flame'})
 								end
@@ -207,17 +205,20 @@ minetest.add_particlespawner({
 			if self.node ~= '' then
 			minetest.sound_play('more_fire_shatter', {gain = 1.0})
 				for dx=-1,1 do
-					for dy=-1,1 do
+					for dy=1,-1,-1 do
 						for dz=-1,1 do
 							local p = {x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
-							local n = minetest.env:get_node(pos).name
-							if minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20 then
-							 minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-								minetest.env:set_node(p, {name='cityscape:napalm'})
-							else
-								--minetest.env:remove_node(p)
-								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-								minetest.env:set_node(p, {name='fire:basic_flame'})
+							local pa = {x=pos.x+dx, y=pos.y+dy+1, z=pos.z+dz}
+							local n = minetest.env:get_node(p).name
+							local na = minetest.env:get_node(pa).name
+							if n ~= "air" and na == "air" then
+								if (minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20) then
+									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
+									minetest.env:set_node(pa, {name='cityscape:napalm'})
+								else
+									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
+									minetest.env:set_node(pa, {name='fire:basic_flame'})
+								end
 							end
 						end
 					end
