@@ -12,15 +12,9 @@ local function nimbus(pos, radius)
 				local pa = {x=p.x, y=p.y+1, z=p.z}
 				local n = minetest.env:get_node(p).name
 				local na = minetest.env:get_node(pa).name
-				--print(n..", "..na)
 				if n ~= "air" and na == "air" then
-					if (minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20) then
-						minetest.sound_play('more_fire_ignite', {pos = pos})
-						minetest.env:set_node(pa, {name='cityscape:napalm'})
-					else
-						minetest.sound_play('more_fire_ignite', {pos = pos})
-						minetest.env:set_node(pa, {name='fire:basic_flame'})
-					end
+					minetest.sound_play('more_fire_ignite', {pos = pos})
+					minetest.env:set_node(pa, {name='fire:basic_flame'})
 				end
 			end
 		end
@@ -39,10 +33,10 @@ local function throw_cocktail(item, player)
 	return item
 end
 
-local function add_effects(pos, radius)
-	if not radius then
-		radius = 5
-	end
+local function napalm(pos)
+	minetest.sound_play('more_fire_ignite', {pos=pos, gain=1})
+	minetest.set_node(pos, {name='fire:basic_flame'})
+	local radius = 5
 
 	minetest.add_particlespawner({
 		amount = 10,
@@ -74,13 +68,6 @@ local function add_effects(pos, radius)
 		maxsize = 2,
 		texture = 'more_fire_spark.png',
 	})
-end
-
-local function napalm(pos)
-	minetest.sound_play('more_fire_ignite', {pos=pos, gain=1})
-	minetest.set_node(pos, {name='cityscape:napalm'})
-	minetest.get_node_timer(pos):start(5.0)
-	add_effects(pos, radius)
 end
 
 local function molotov_entity_on_step(self, dtime)
@@ -167,92 +154,6 @@ minetest.register_craftitem('cityscape:molotov_cocktail', {
 	on_use = throw_cocktail,
 })
 
-minetest.register_node('cityscape:napalm', {
-	drawtype = 'firelike',
-	tiles = {{
-		name='fire_basic_flame_animated.png',
-		animation={type='vertical_frames', aspect_w=16, aspect_h=16, length=1},
-	}},
-	inventory_image = 'fire_basic_flame.png',
-	light_source = 14,
-	groups = {igniter=1,dig_immediate=3, not_in_creative_inventory =1, not_in_craft_guide=1},
-	drop = '',
-	walkable = false,
-	buildable_to = true,
-	damage_per_second = 4,
-})
-
-minetest.register_abm({
-	nodenames={'cityscape:napalm'},
-	neighbors={'air'},
-	interval = 1,
-	chance = 1,
-	action = function(pos,node,active_object_count,active_object_count_wider)
-		minetest.add_particlespawner({
-			amount = 200,
-			time = 3,
-			minpos = pos,
-			maxpos = pos,
-			minvel = {x=2, y=-0.2, z=2},
-			maxvel = {x=-2, y=-0.5, z=-2},
-			minacc = {x=0, y=-6, z=0},
-			maxacc = {x=0, y=-10, z=0},
-			minexptime = 2,
-			maxexptime = 6,
-			minsize = 0.05,
-			maxsize = 0.5,
-			collisiondetection = false,
-			texture = 'more_fire_spark.png',
-		})
-		minetest.add_particlespawner({
-			amount = 20,
-			time = 2,
-			minpos = pos,
-			maxpos = pos,
-			minvel = {x=-2, y=2, z=-2},
-			maxvel = {x=1, y=3, z=1},
-			minacc = {x=0, y=6, z=0},
-			maxacc = {x=0, y=2, z=0},
-			minexptime = 1,
-			maxexptime = 3,
-			minsize = 3,
-			maxsize = 5,
-			collisiondetection = false,
-			texture = 'more_fire_smoke.png',
-		})
-		minetest.add_particlespawner({
-			amount = 10,
-			time = 4,
-			minpos = pos,
-			maxpos = pos,
-			minvel = {x=0, y= 3, z=0},
-			maxvel = {x=0, y=5, z=0},
-			minacc = {x=0.1, y=0.5, z=-0.1},
-			maxacc = {x=-0.2, y=2, z=0.2},
-			minexptime = 1,
-			maxexptime = 3,
-			minsize = 1,
-			maxsize = 3,
-			collisiondetection = false,
-			texture = 'more_fire_smoke.png',
-		})
-		local r = 0-- Radius for destroying
-		for x = pos.x-r, pos.x+r, 1 do
-			for y = pos.y-r, pos.y+r, 1 do
-				for z = pos.z-r, pos.z+r, 1 do
-					local cpos = {x=x,y=y,z=z}
-					if minetest.env:get_node(cpos).name == 'cityscape:napalm' then
-						minetest.env:set_node(cpos,{name='fire:basic_flame'})
-					end
-					if math.random(0,1) == 1 or minetest.env:get_node(cpos).name == 'cityscape:napalm' then
-						minetest.env:remove_node(cpos)
-					end
-				end
-			end
-		end
-	end,
-})
-
 minetest.register_abm({
 	nodenames={'fire:basic_flame'},
 	neighbors={'air'},
@@ -297,7 +198,7 @@ minetest.register_abm({
 })
 
 minetest.register_craft({
-	output = "cityscape:molotov_coctail 7",
+	output = "cityscape:molotov_cocktail 7",
 	recipe = {
 		{"vessels:glass_bottle", "farming:cotton", "vessels:glass_bottle"},
 		{"vessels:glass_bottle", "cityscape:gasoline", "vessels:glass_bottle"},
