@@ -1,59 +1,31 @@
-   --Molotov Cocktail_[rev002]
-   --base code is from throwing enhanced and potions mods
+--Molotov Cocktail_[rev002]
+--base code is from throwing enhanced and potions mods
 
-   local MOD_NAME = minetest.get_current_modname()
-   local MOD_PATH = minetest.get_modpath(MOD_NAME)
+local MOD_NAME = minetest.get_current_modname()
+local MOD_PATH = minetest.get_modpath(MOD_NAME)
 
-minetest.register_craftitem('cityscape:molotov_cocktail', {
-		description = 'Molotov Cocktail',
-		inventory_image = 'more_fire_molotov_cocktail.png',
-		on_place = function(itemstack, user, pointed_thing)
-			itemstack:take_item()
-			minetest.sound_play('more_fire_shatter', {gain = 1.0})
-			n = minetest.env:get_node(pointed_thing)
-if pointed_thing.type == 'node' then
-minetest.env:add_node(pointed_thing.above, {name='cityscape:napalm'})
-minetest.sound_play('more_fire_ignite', {pos,pos})
+local function nimbus(pos, radius)
+	for dx=-radius,radius do
+		for dy=radius,-radius,-1 do
+			for dz=-radius,radius do
+				local p = {x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
+				local pa = {x=p.x, y=p.y+1, z=p.z}
+				local n = minetest.env:get_node(p).name
+				local na = minetest.env:get_node(pa).name
+				--print(n..", "..na)
+				if n ~= "air" and na == "air" then
+					if (minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20) then
+						minetest.sound_play('more_fire_ignite', {pos = pos})
+						minetest.env:set_node(pa, {name='cityscape:napalm'})
+					else
+						minetest.sound_play('more_fire_ignite', {pos = pos})
+						minetest.env:set_node(pa, {name='fire:basic_flame'})
+					end
+				end
+			end
+		end
+	end
 end
-  			 --Shattered glass Particles
-  			 minetest.add_particlespawner({
-				amount = 40,
-				time = 0.1,
-				minpos = pointed_thing.above,
-				maxpos = pointed_thing.above,
-				minvel = {x=2, y=0.2, z=2},
-				maxvel = {x=-2, y=0.5, z=-2},
-				minacc = {x=0, y=-6, z=0},
-				maxacc = {x=0, y=-10, z=0},
-				minexptim = 0.5,
-				maxexptime = 2,
-				minsize = 0.2,
-				maxsize = 5,
-				collisiondetection = true,
-				texture = 'more_fire_shatter.png'})
-  			 --fire ember particles
-  			 minetest.add_particlespawner({
-				amount = 100,
-				time = 0.1,
-				minpos = pointed_thing.above,
-				maxpos = pointed_thing.above,
-				minvel = {x=-2, y=0.5, z=-2},
-				maxvel = {x=2, y=0.5, z=2},
-				minacc = {x=0, y=-10, z=0},
-				maxacc = {x=0, y=-6, z=0},
-				minexptime = 2,
-				maxexptime = 3,
-				minsize = 0.25,
-				maxsize = 0.5,
-				collisiondetection = true,
-				texture = 'more_fire_spark.png'})
-		local dir = vector.multiply(user:get_look_dir(), 20)
-				minetest.add_particle(
-				{x=user:getpos().x, y=user:getpos().y+1.5, z=user:getpos().z}, {x=dir.x, y=dir.y, z=dir.z}, {x=0, y=-10, z=0}, 0.2,
-					6, false, 'more_fire_molotov_cocktail.png')
-			return itemstack
-		end,
-})
 
 local function throw_cocktail(item, player)
 	local playerpos = player:getpos()
@@ -67,9 +39,11 @@ local function throw_cocktail(item, player)
 	return item
 end
 
-local radius = 5.0
-
 local function add_effects(pos, radius)
+	if not radius then
+		radius = 5
+	end
+
 	minetest.add_particlespawner({
 		amount = 10,
 		time = 0.2,
@@ -85,7 +59,7 @@ local function add_effects(pos, radius)
 		maxsize = 2,
 		texture = 'more_fire_spark.png',
 	})
-		minetest.add_particlespawner({
+	minetest.add_particlespawner({
 		amount = 10,
 		time = 0.2,
 		minpos = vector.subtract(pos, radius / 2),
@@ -109,19 +83,11 @@ local function napalm(pos)
 	add_effects(pos, radius)
 end
 
-local MORE_FIRE_MOLOTOV_ENTITY = {
-	timer=0,
-	collisionbox = {0,0,0,0,0,0},
-	physical = false,
-	textures = {'more_fire_molotov_cocktail.png'},
-	lastpos={},
-}
-
-MORE_FIRE_MOLOTOV_ENTITY.on_step = function(self, dtime)
+local function molotov_entity_on_step(self, dtime)
 	self.timer = self.timer + dtime
 	local pos = self.object:getpos()
 	local node = minetest.get_node(pos)
-minetest.add_particlespawner({
+	minetest.add_particlespawner({
 		amount = 10,
 		time = 0.5,
 		minpos = pos,
@@ -157,43 +123,15 @@ minetest.add_particlespawner({
 			if obj:get_luaentity() ~= nil then
 				if obj:get_luaentity().name ~= 'cityscape:molotov_entity' and obj:get_luaentity().name ~= '__builtin:item' then
 					if self.node ~= '' then
-					 minetest.sound_play('more_fire_shatter', {gain = 1.0})
-						for dx=-3,3 do
-							for dy=-3,3 do
-								for dz=-3,3 do
-									local p = {x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
-									local n = minetest.env:get_node(pos).name
-									if minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20 then
-									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-										minetest.env:set_node(p, {name='cityscape:napalm'})
-									else
-								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-								minetest.env:set_node(p, {name='fire:basic_flame'})
-									end
-								end
-							end
-						end
+						minetest.sound_play('more_fire_shatter', {gain = 1.0})
+						nimbus(pos, 3)
 					end
 					self.object:remove()
 				end
 			else
 				if self.node ~= '' then
-						minetest.sound_play('more_fire_shatter', {gain = 1.0})
-					for dx=-2,2 do
-						for dy=-2,2 do
-							for dz=-2,2 do
-								local p = {x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
-								local n = minetest.env:get_node(pos).name
-								if minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20 then
-								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-									minetest.env:set_node(p, {name='cityscape:napalm'})
-								else
-								minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-								minetest.env:set_node(p, {name='fire:basic_flame'})
-								end
-							end
-						end
-					end
+					minetest.sound_play('more_fire_shatter', {gain = 1.0})
+					nimbus(pos, 2)
 				end
 				self.object:remove()
 			end
@@ -203,26 +141,8 @@ minetest.add_particlespawner({
 	if self.lastpos.x~=nil then
 		if node.name ~= 'air' then
 			if self.node ~= '' then
-			minetest.sound_play('more_fire_shatter', {gain = 1.0})
-				for dx=-1,1 do
-					for dy=1,-1,-1 do
-						for dz=-1,1 do
-							local p = {x=pos.x+dx, y=pos.y+dy, z=pos.z+dz}
-							local pa = {x=pos.x+dx, y=pos.y+dy+1, z=pos.z+dz}
-							local n = minetest.env:get_node(p).name
-							local na = minetest.env:get_node(pa).name
-							if n ~= "air" and na == "air" then
-								if (minetest.registered_nodes[n].groups.flammable or math.random(1, 100) <= 20) then
-									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-									minetest.env:set_node(pa, {name='cityscape:napalm'})
-								else
-									minetest.sound_play('more_fire_ignite', {pos = self.lastpos})
-									minetest.env:set_node(pa, {name='fire:basic_flame'})
-								end
-							end
-						end
-					end
-				end
+				minetest.sound_play('more_fire_shatter', {gain = 1.0})
+				nimbus(pos, 1)
 			end
 			self.object:remove()
 			napalm(self.lastpos)
@@ -231,9 +151,21 @@ minetest.add_particlespawner({
 	self.lastpos={x=pos.x, y=pos.y, z=pos.z}
 end
 
-minetest.register_entity('cityscape:molotov_entity', MORE_FIRE_MOLOTOV_ENTITY)
+minetest.register_entity('cityscape:molotov_entity', {
+	timer=0,
+	collisionbox = {0,0,0,0,0,0},
+	physical = false,
+	textures = {'more_fire_molotov_cocktail.png'},
+	lastpos={},
+	on_step = molotov_entity_on_step,
+})
 
-minetest.override_item('cityscape:molotov_cocktail', {on_use = throw_cocktail})
+minetest.register_craftitem('cityscape:molotov_cocktail', {
+	description = 'Molotov Cocktail',
+	inventory_image = 'more_fire_molotov_cocktail.png',
+	on_place = throw_cocktail,
+	on_use = throw_cocktail,
+})
 
 minetest.register_node('cityscape:napalm', {
 	drawtype = 'firelike',
@@ -244,7 +176,7 @@ minetest.register_node('cityscape:napalm', {
 	inventory_image = 'fire_basic_flame.png',
 	light_source = 14,
 	groups = {igniter=1,dig_immediate=3, not_in_creative_inventory =1, not_in_craft_guide=1},
-		drop = '',
+	drop = '',
 	walkable = false,
 	buildable_to = true,
 	damage_per_second = 4,
@@ -270,7 +202,8 @@ minetest.register_abm({
 			minsize = 0.05,
 			maxsize = 0.5,
 			collisiondetection = false,
-			texture = 'more_fire_spark.png'})
+			texture = 'more_fire_spark.png',
+		})
 		minetest.add_particlespawner({
 			amount = 20,
 			time = 2,
@@ -285,7 +218,8 @@ minetest.register_abm({
 			minsize = 3,
 			maxsize = 5,
 			collisiondetection = false,
-			texture = 'more_fire_smoke.png'})
+			texture = 'more_fire_smoke.png',
+		})
 		minetest.add_particlespawner({
 			amount = 10,
 			time = 4,
@@ -300,18 +234,17 @@ minetest.register_abm({
 			minsize = 1,
 			maxsize = 3,
 			collisiondetection = false,
-			texture = 'more_fire_smoke.png'})
-local r = 0-- Radius for destroying
+			texture = 'more_fire_smoke.png',
+		})
+		local r = 0-- Radius for destroying
 		for x = pos.x-r, pos.x+r, 1 do
 			for y = pos.y-r, pos.y+r, 1 do
 				for z = pos.z-r, pos.z+r, 1 do
 					local cpos = {x=x,y=y,z=z}
 					if minetest.env:get_node(cpos).name == 'cityscape:napalm' then
-				 minetest.env:set_node(cpos,{name='fire:basic_flame'})
+						minetest.env:set_node(cpos,{name='fire:basic_flame'})
 					end
-					if math.random(0,1) == 1
-					or minetest.env:get_node(cpos).name == 'cityscape:napalm'
-					then
+					if math.random(0,1) == 1 or minetest.env:get_node(cpos).name == 'cityscape:napalm' then
 						minetest.env:remove_node(cpos)
 					end
 				end
@@ -325,42 +258,41 @@ minetest.register_abm({
 	neighbors={'air'},
 	interval = 1,
 	chance = 2,
-		action = function(pos, node)
-	     if
-                minetest.get_node({x=pos.x, y=pos.y+1.0, z=pos.z}).name == 'air' and
-                minetest.get_node({x=pos.x, y=pos.y+2.0, z=pos.z}).name == 'air'
-             then
-					minetest.add_particlespawner({
-						amount = 30,
-						time = 2,
-						minpos = pos,
-						maxpos = pos,
-						minvel = {x=-2, y=2, z=-2},
-						maxvel = {x=1, y=3, z=1},
-						minacc = {x=0, y=6, z=0},
-						maxacc = {x=0, y=2, z=0},
-						minexptime = 1,
-						maxexptime = 3,
-						minsize = 10,
-						maxsize = 20,
-						collisiondetection = false,
-						texture = 'more_fire_smoke.png'})
-		minetest.add_particlespawner({
-			amount = 15,
-			time = 4,
-			minpos = pos,
-			maxpos = pos,
-			minvel = {x=0, y= 3, z=0},
-			maxvel = {x=0, y=5, z=0},
-			minacc = {x=0.1, y=0.5, z=-0.1},
-			maxacc = {x=-0.2, y=2, z=0.2},
-			minexptime = 1,
-			maxexptime = 3,
-			minsize = 5,
-			maxsize = 10,
-			collisiondetection = false,
-			texture ='more_fire_smoke.png'})
-	     end
+	action = function(pos, node)
+		if minetest.get_node({x=pos.x, y=pos.y+1.0, z=pos.z}).name == 'air' and minetest.get_node({x=pos.x, y=pos.y+2.0, z=pos.z}).name == 'air' then
+			minetest.add_particlespawner({
+				amount = 30,
+				time = 2,
+				minpos = pos,
+				maxpos = pos,
+				minvel = {x=-2, y=2, z=-2},
+				maxvel = {x=1, y=3, z=1},
+				minacc = {x=0, y=6, z=0},
+				maxacc = {x=0, y=2, z=0},
+				minexptime = 1,
+				maxexptime = 3,
+				minsize = 10,
+				maxsize = 20,
+				collisiondetection = false,
+				texture = 'more_fire_smoke.png',
+			})
+			minetest.add_particlespawner({
+				amount = 15,
+				time = 4,
+				minpos = pos,
+				maxpos = pos,
+				minvel = {x=0, y= 3, z=0},
+				maxvel = {x=0, y=5, z=0},
+				minacc = {x=0.1, y=0.5, z=-0.1},
+				maxacc = {x=-0.2, y=2, z=0.2},
+				minexptime = 1,
+				maxexptime = 3,
+				minsize = 5,
+				maxsize = 10,
+				collisiondetection = false,
+				texture ='more_fire_smoke.png',
+			})
+		end
 	end
 })
 
