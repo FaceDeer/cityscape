@@ -3,4 +3,6 @@ The cityscape_broken_3.png, cityscape_broken_3_low.png and cityscape_plate_glass
 
 The original car texture was created by Melkor, and is distributed under the CC-BY-NC-SA license (see the models directory).
 
+The original crate texture was created for the Ryzom game (ryzom.com), and is distributed under the CC-BY-SA (http://creativecommons.org/licenses/by-sa/3.0/) license.
+
 All other textures are CC0.

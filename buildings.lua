@@ -12,6 +12,18 @@ local function breaker(node)
 end
 
 
+local function crates(data, pos1, pos2)
+	local y = math.min(pos2.y, pos1.y)
+	for z = pos1.z,pos2.z do
+		for x = pos1.x,pos2.x do
+			if (data[x][y][z] == node["air"] or data[x][y][z] == nil) and math.random(1000) == 1 then
+				data[x][y][z] = node["crate"]
+			end
+		end
+	end
+end
+
+
 local function lights(data, param, pos1, pos2)
 	local y = math.max(pos2.y, pos1.y)
 	for z = pos1.z,pos2.z do
@@ -203,6 +215,7 @@ local function gotham(data, param, dx, dy, dz)
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=2,y=((f-1)*4),z=2}, {x=dx-1,y=(f*4-1),z=dz-1}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=3,y=((f-1)*4),z=3}, {x=dx-2,y=(f*4-1),z=dz-2})
+		crates(data, {x=3,y=((f-1)*4+1),z=3}, {x=dx-2,y=((f-1)*4+1),z=dz-2})
 	end
 
 	if ra == 0 then
@@ -265,6 +278,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
+		crates(data, {x=1,y=((f-1)*4+1),z=1}, {x=dx,y=((f-1)*4+1),z=dz})
 	end
 
 	if ra == 0 then
@@ -341,6 +355,7 @@ local function simple(data, param, dx, dy, dz, slit)
 	for f = 1,floors-ra do
 		stairwell(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz}, (f / 2 == math.floor(f / 2)))
 		lights(data, param, {x=1,y=((f-1)*4),z=1}, {x=dx,y=(f*4-1),z=dz})
+		crates(data, {x=1,y=((f-1)*4+1),z=1}, {x=dx,y=((f-1)*4+1),z=dz})
 	end
 
 	if ra == 0 then

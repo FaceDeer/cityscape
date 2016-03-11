@@ -32,6 +32,7 @@ do
 		{"stone_brick_broken", "cityscape:stonebrick_broken", true, false},
 		{"desert_stone_brick_broken", "cityscape:desert_stonebrick_broken", true, false},
 		{"floor_ceiling_broken", "cityscape:floor_ceiling_broken", true, false},
+		{"crate", "cityscape:crate", false, false},
 		{"plaster", "cityscape:plaster", false, false},
 		{"plaster_broken", "cityscape:plaster_broken", false, false},
 		{"glass", "default:glass", false, false},

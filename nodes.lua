@@ -261,3 +261,10 @@ minetest.register_node("cityscape:car", {
 newnode = cityscape.clone_node("cityscape:car")
 newnode.tiles = {"cityscape_car_wreck.png"}
 minetest.register_node("cityscape:car_broken", newnode)
+
+minetest.register_node("cityscape:crate", {
+	description = "Crate",
+	tiles = {"cityscape_crate.png"},
+	sounds = default.node_sound_wood_defaults(),
+	groups = {choppy = 1, level = 1},
+})
