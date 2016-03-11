@@ -29,6 +29,7 @@ dofile(cityscape.path .. "/nodes.lua")
 dofile(cityscape.path .. "/deco_rocks.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")
+dofile(cityscape.path .. "/molotov.lua")
 
 cityscape.players_to_check = {}
 

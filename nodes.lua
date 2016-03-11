@@ -48,7 +48,7 @@ minetest.register_node("cityscape:plaster", {
 	description = "Plaster",
 	tiles = {"default_desert_stone.png^[colorize:#8C8175:225"},
 	sounds = default.node_sound_stone_defaults(),
-	groups = {cracky = 3, level = 0, oddly_breakable_by_hand = 1},
+	groups = {cracky = 3, level = 0, flammable = 2, oddly_breakable_by_hand = 1},
 })
 newnode = cityscape.clone_node("cityscape:plaster")
 newnode.tiles = {"(default_desert_stone.png^[colorize:#8C8175:225)^cityscape_broken_3_low.png"}
@@ -97,7 +97,7 @@ minetest.register_node("cityscape:floor_ceiling", {
 	description = "Floor/Ceiling",
 	tiles = {"cityscape_floor.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
-	groups = {cracky = 3, level=1, stone = 1},
+	groups = {cracky = 3, level=1, flammable = 3},
 	drop = "default:cobble",
 	drop = {
 		max_items = 3,
@@ -135,7 +135,7 @@ minetest.register_node("cityscape:roof", {
 	description = "Roof",
 	tiles = {"cityscape_tarmac.png", "cityscape_ceiling.png", "default_stone.png"},
 	paramtype2 = "facedir",
-	groups = {cracky = 3, level=1, stone = 1},
+	groups = {cracky = 3, level=1, flammable = 3},
 	drop = "default:cobble",
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
@@ -249,12 +249,16 @@ minetest.register_node("cityscape:car", {
 			rarity = 1,
 		},
 		{
+			items = {"cityscape:gasoline 2",},
+			rarity = 3,
+		},
+		{
 			items = {"default:copper_ingot",},
 			rarity = 6,
 		},
 	},
 },
-	groups = {cracky = 1, level = 2},
+	groups = {cracky = 1, level = 2, flammable = 3},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
@@ -276,6 +280,21 @@ minetest.register_node("cityscape:canned_food", {
 	inventory_image = "cityscape_canned_food.png",
 	on_use = minetest.item_eat(3),
 	groups = {dig_immediate = 3, attached_node = 1},
+})
+
+minetest.register_node("cityscape:gasoline", {
+	description = "Gasoline",
+	drawtype = "plantlike",
+	paramtype = "light",
+	visual_scale = 0.8,
+	selection_box = { type = "fixed",
+		fixed = {
+			{0.2, 0.1, 0.2, -0.2, -0.5, -0.2}
+		}
+	},
+	tiles = {"cityscape_gasoline.png"},
+	inventory_image = "cityscape_gasoline.png",
+	groups = {dig_immediate = 3, attached_node = 1, flammable = 1},
 })
 
 
@@ -333,7 +352,7 @@ minetest.register_node("cityscape:crate", {
 	description = "Crate",
 	tiles = {"cityscape_crate.png"},
 	sounds = default.node_sound_wood_defaults(),
-	groups = {choppy = 1, level = 1},
+	groups = {choppy = 1, level = 1, flammable = 2},
 	--drop = {
 	--	max_items = 0,
 	--	items = {}
