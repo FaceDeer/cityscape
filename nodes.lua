@@ -237,7 +237,7 @@ minetest.register_node("cityscape:car", {
 	mesh = "cityscape_car.obj",
 	selection_box = { type = "fixed",
 		fixed = {
-			{-0.9, -0.5, -1.5, 0.9, 0.6, 1.5},
+			{-0.9, -0.5, -1.5, 0.9, 0.2, 1.5},
 		} },
 	paramtype = "light",
 	paramtype2 = "facedir",
@@ -262,9 +262,85 @@ newnode = cityscape.clone_node("cityscape:car")
 newnode.tiles = {"cityscape_car_wreck.png"}
 minetest.register_node("cityscape:car_broken", newnode)
 
+minetest.register_node("cityscape:canned_food", {
+	description = "Canned Food",
+	drawtype = "plantlike",
+	paramtype = "light",
+	visual_scale = 0.6,
+	selection_box = { type = "fixed",
+		fixed = {
+			{0.1, -0.1, 0.1, -0.1, -0.5, -0.1}
+		}
+	},
+	tiles = {"cityscape_canned_food.png"},
+	inventory_image = "cityscape_canned_food.png",
+	on_use = minetest.item_eat(3),
+	groups = {dig_immediate = 3, attached_node = 1},
+})
+
+
+local goodies = {
+	{ items = {"default:pine_wood 2",}, rarity = 1, },
+	{ items = {"cityscape:canned_food 12",}, rarity = 10, },
+	{ items = {"default:steel_ingot 3",}, rarity = 10, },
+	{ items = {"default:copper_ingot 3",}, rarity = 10, },
+	{ items = {"default:book 10",}, rarity = 10, },
+	{ items = {"default:paper 30",}, rarity = 10, },
+	{ items = {"default:meselamp",}, rarity = 10, },
+}
+
+if minetest.get_modpath("vessels") then
+	goodies[#goodies+1] = { items = {"vessels:shelf",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"vessels:glass_bottle 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"vessels:drinking_glass 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"vessels:steel_bottle 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"vessels:glass_fragments 20",}, rarity = 10, }
+end
+
+if minetest.get_modpath("bucket") then
+	goodies[#goodies+1] = { items = {"bucket:bucket_empty 10",}, rarity = 10, }
+end
+
+if minetest.get_modpath("wool") then
+	goodies[#goodies+1] = { items = {"wool:blue 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:red 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:green 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:yellow 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:cyan 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:magenta 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:orange 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:violet 10",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"wool:pink 10",}, rarity = 10, }
+end
+
+if minetest.get_modpath("gemalde") then
+	goodies[#goodies+1] = { items = {"gemalde:node_1",}, rarity = 10, }
+end
+
+if minetest.get_modpath("beds") then
+	goodies[#goodies+1] = { items = {"beds:fancy_bed",}, rarity = 10, }
+	goodies[#goodies+1] = { items = {"beds:bed",}, rarity = 10, }
+end
+
+if minetest.get_modpath("body_pillow") then
+	goodies[#goodies+1] = { items = {"body_pillow:body_pillow",}, rarity = 10, }
+end
+
+local function crate(pos, oldnode, oldmetadata, digger)
+end
+
 minetest.register_node("cityscape:crate", {
 	description = "Crate",
 	tiles = {"cityscape_crate.png"},
 	sounds = default.node_sound_wood_defaults(),
 	groups = {choppy = 1, level = 1},
+	--drop = {
+	--	max_items = 0,
+	--	items = {}
+	--},
+	drop = {
+		max_items = 2,
+		items = goodies
+	},
+	--after_dig_node = crate,
 })
