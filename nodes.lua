@@ -141,13 +141,28 @@ minetest.register_node("cityscape:roof", {
 	is_ground_content = false,
 })
 
-default.register_fence("cityscape:fence_steel", {
-	description = "Saftey Rail",
-	texture = "cityscape_safety_rail.png",
-	material = "default:steel",
-	groups = {cracky = 1, level = 2},
-	sounds = default.node_sound_stone_defaults(),
-})
+if default.register_fence then
+	default.register_fence("cityscape:fence_steel", {
+		description = "Safety Rail",
+		texture = "cityscape_safety_rail.png",
+		material = "default:steel",
+		groups = {cracky = 1, level = 2},
+		sounds = default.node_sound_stone_defaults(),
+	})
+else
+	minetest.register_node("cityscape:fence_steel", {
+		description = "Safety Rail",
+		tiles = {"cityscape_safety_rail.png"},
+		paramtype = "light",
+		drawtype = "nodebox",
+		node_box = { type = "fixed",
+		fixed = {
+			{0.1, 0.5, 0.1, -0.1, -0.5, -0.1},
+		}, },
+		groups = {cracky = 1, level = 2},
+		sounds = default.node_sound_stone_defaults(),
+	})
+end
 
 minetest.register_node("cityscape:gargoyle", {
 	description = "Concrete",
