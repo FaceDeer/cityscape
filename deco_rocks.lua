@@ -14,7 +14,7 @@ local function small_cube(grid, pos, diameters)
 	rock[4] = pos.x + diameters.x
 	rock[5] = pos.y + diameters.y
 	rock[6] = pos.z + diameters.z
-	push(grid, rock)
+	grid[#grid+1] = rock
 end
 
 
