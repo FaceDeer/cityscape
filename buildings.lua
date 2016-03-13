@@ -1,4 +1,18 @@
 local node = cityscape.node
+local pcount = 0
+
+
+local function pstore(param, x, y, z, p)
+	pcount = pcount + 1
+	if param[pcount] then
+		param[pcount][1] = x
+		param[pcount][2] = y
+		param[pcount][3] = z
+		param[pcount][4] = p
+	else
+		param[pcount] = {x, y, z, p}
+	end
+end
 
 
 local function breaker(node)
@@ -34,7 +48,7 @@ local function lights(data, param, pos1, pos2)
 				else
 					data[x][y][z] = node["light_panel"]
 				end
-				param[#param+1] = {x, y, z, 20} -- 20-23
+				pstore(param, x, y, z, 20) -- 20-23
 			end
 		end
 	end
@@ -102,7 +116,7 @@ local function stairwell(data, param, pos1, pos2, left)
 	else
 		for i = 1,4 do
 			data[3 + px][i + py][7 - i + pz] = node["stair_stone"]
-			param[#param+1] = {3+px, i+py, 7-i+pz, 4}
+			pstore(param, 3+px, i+py, 7-i+pz, 4)
 		end
 		for i = 1,3 do
 			data[3 + px][4 + py][7 - i + pz] = node["air"]
@@ -141,7 +155,7 @@ local function gotham(data, param, dx, dy, dz)
 					else
 						dir = 12
 					end
-					param[#param+1] = {x, y, z, dir}
+					pstore(param, x, y, z, dir)
 				elseif (z == 0 or z == dz + 1) and x % 5 == 4 then
 					data[x][y][z] = node["gargoyle"]
 					if z == 0 then
@@ -149,7 +163,7 @@ local function gotham(data, param, dx, dy, dz)
 					else
 						dir = 7
 					end
-					param[#param+1] = {x, y, z, dir}
+					pstore(param, x, y, z, dir)
 				end
 			end
 		end
@@ -364,20 +378,78 @@ local function simple(data, param, dx, dy, dz, slit)
 end
 
 
+-- This is probably a bad idea...
+local function simple_tree(data, px, pz)
+	local r
+	local h = math.random(4,6)
+	for y = 1,h do
+		data[px][y][pz] = node["tree"]
+	end
+	for z = -2,2 do
+		for y = -2,2 do
+			for x = -2,2 do
+				r = math.sqrt(x ^ 2 + y ^ 2 + z ^ 2)
+				if data[x + px][y + h][z + pz] ~= node["tree"] and math.random(4,6) > r * 2 then
+					data[x + px][y + h][z + pz] = node["leaves"]
+				end
+			end
+		end
+	end
+end
+
+local function park(data, param, dx, dy, dz)
+	local sr
+
+	for z = 1,dz do
+		for x = 1,dx do
+			data[x][0][z] = node["dirt_with_grass"]
+			if cityscape.desolation > 0 then
+				sr = math.random(10)
+				if sr < 6 then
+					data[x][1][z] = node["grass"..sr]
+				elseif sr == 6 then
+					data[x][1][z] = node["dry_shrub"]
+				end
+			end
+		end
+	end
+
+	for qz = 1,math.floor(dz / 5) do
+		for qx = 1,math.floor(dx / 5) do
+			sr = math.random(5)
+			if sr == 1 then
+				simple_tree(data, qx * 5 - 2, qz * 5 - 2)
+			elseif sr == 2 then
+				data[qx * 5 - 2][1][qz * 5 - 2] = node["bench"]
+				pstore(param, qx * 5 - 2, 1, qz * 5 - 2, math.random(4) - 1)
+			elseif sr == 3 then
+				data[qx * 5 - 2][1][qz * 5 - 2] = node["swing_set"]
+				pstore(param, qx * 5 - 2, 1, qz * 5 - 2, math.random(4) - 1)
+			end
+		end
+	end
+end
+
+
 function cityscape.build(data, param, dx, dy, dz)
-	local sr = math.random(4)
+	pcount = 0
+	local sr = math.random(13)
 
 	if math.random(10) <= cityscape.vacancies then
-		return
+		return 0
 	end
 
-	if sr == 1 then
+	if sr <= 3 then
 		gotham(data, param, dx, dy, dz)
-	elseif sr == 2 then
+	elseif sr <= 6 then
 		glass_and_steel(data, param, dx, dy, dz)
-	elseif sr == 3 then
+	elseif sr <= 9 then
 		simple(data, param, dx, dy, dz)
-	elseif sr == 4 then
+	elseif sr <= 12 then
 		simple(data, param, dx, dy, dz, true)
+	else
+		park(data, param, dx, dy, dz)
 	end
+
+	return pcount
 end

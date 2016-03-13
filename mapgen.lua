@@ -17,6 +17,9 @@ do
 		{"grass1", "default:grass_1", false, false},
 		{"grass2", "default:grass_2", false, false},
 		{"grass3", "default:grass_3", false, false},
+		{"grass4", "default:grass_4", false, false},
+		{"grass5", "default:grass_5", false, false},
+		{"dry_shrub", "default:dry_shrub", false, false},
 		{"brick", "default:brick", true, false},
 		{"sandstone_brick", "default:sandstonebrick", true, false},
 		{"stone_brick", "default:stonebrick", true, false},
@@ -57,6 +60,8 @@ do
 		{"road_yellow_line", "cityscape:road_yellow_line", true, false},
 		{"plate_glass", "cityscape:silver_glass", true, false},
 		{"plate_glass_broken", "cityscape:silver_glass_broken", false, false},
+		{"bench", "cityscape:park_bench", false, false},
+		{"swing_set", "cityscape:swing_set", false, false},
 		{"stair_road", "stairs:stair_road", true, false},
 		{"stair_stone", "stairs:stair_stone", false, false},
 		{"stair_pine", "stairs:stair_pine_wood", false, false},
@@ -66,6 +71,8 @@ do
 		{"dirt_with_dry_grass", "default:dirt_with_dry_grass", false, false},
 		{"dirt_with_snow", "default:dirt_with_snow", false, false},
 		{"sand", "default:sand", false, false},
+		{"tree", "default:tree", false, false},
+		{"leaves", "default:leaves", false, false},
 		{"sandstone", "default:sandstone", false, false},
 		{"desert_sand", "default:desert_sand", false, false},
 		{"gravel", "default:gravel", false, false},
@@ -183,35 +190,19 @@ function cityscape.generate(minp, maxp, seed)
 	end
 
 	if city_block then
+		-- This may fix problems with the generate function getting
+		-- called twice and producing split buildings.
+		-- The same buildings should be generated each time if we
+		-- use the same seed (based on perlin noise).
+		local seed_noise = minetest.get_perlin({offset = 0, scale = 32768, seed = 5202, spread = {x = 80, y = 80, z = 80}, octaves = 2, persist = 0.4, lacunarity = 2})
+		math.randomseed(seed_noise:get2d({x=minp.x, y=minp.z}))
+
 		for i = 1,mx do
-			if not bd[i] then
-				bd[i] = {}
-			end
-			if not pd[i] then
-				pd[i] = {}
-			end
 			if not sw[i] then
 				sw[i] = {}
 			end
 			for j = 1,mz do
-				if not bd[i][j] then
-					bd[i][j] = {}
-				end
-				pd[i][j] = {}
 				sw[i][j] = math.random(0,2)
-				for k = 0,dx+1 do
-					if not bd[i][j][k] then
-						bd[i][j][k] = {}
-					end
-					for l = 0,(maxp.y - avg + 2) do
-						if not bd[i][j][k][l] then
-							bd[i][j][k][l] = {}
-						end
-						for m = 0,dz+1 do
-							bd[i][j][k][l][m] = nil
-						end
-					end
-				end
 			end
 		end
 
@@ -263,14 +254,16 @@ function cityscape.generate(minp, maxp, seed)
 		for z = minp.z - off_zn, maxp.z + off_zp do
 			for x = minp.x - off_xn, maxp.x + off_xp do
 				if x < minp.x or x > maxp.x or z < minp.z or z > maxp.z then
-					ivm = a:index(x, minp.y, z)
-					for y = minp.y, maxp.y do
-						if y <= avg and y > min - 5 then
-							data[ivm] = node[breaker("concrete")]
-						elseif y > min - 5 then
-							data[ivm] = node["air"]
+					if not ((x < minp.x - (sidewalk + 1) or x > maxp.x + (sidewalk + 1)) and (z < minp.z - (sidewalk + 1) or z > maxp.z + (sidewalk + 1))) then
+						ivm = a:index(x, minp.y, z)
+						for y = minp.y, maxp.y do
+							if y <= avg and y > min - 5 then
+								data[ivm] = node[breaker("concrete")]
+							elseif y > min - 5 then
+								data[ivm] = node["air"]
+							end
+							ivm = ivm + a.ystride
 						end
-						ivm = ivm + a.ystride
 					end
 				end
 			end
@@ -393,20 +386,30 @@ function cityscape.generate(minp, maxp, seed)
 			end
 		end
 
+		local p, pc
 		for qz = 1,mz do
 			for qx = 1,mx do
-				cityscape.build(bd[qx][qz], pd[qx][qz], dx, maxp.y - avg, dz)
-			end
-		end
+				for k = 0,dx+1 do
+					if not bd[k] then
+						bd[k] = {}
+					end
+					for l = 0,(maxp.y - avg + 2) do
+						if not bd[k][l] then
+							bd[k][l] = {}
+						end
+						for m = 0,dz+1 do
+							bd[k][l][m] = nil
+						end
+					end
+				end
 
-		for qz = 1,mz do
-			for qx = 1,mx do
+				pc = cityscape.build(bd, pd, dx, maxp.y - avg, dz)
 				for iz = 0,dz+1 do
 					for ix = 0,dx+1 do
 						ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + ix - 1, avg, minp.z + (qz - 1) * rz + streetw + sidewalk + lz + iz - 1)
 						for y = 0,(maxp.y - avg) do
-							if bd[qx][qz][ix][y][iz] then
-								data[ivm] = bd[qx][qz][ix][y][iz]
+							if bd[ix][y][iz] then
+								data[ivm] = bd[ix][y][iz]
 							elseif y > 0 then
 								data[ivm] = node["air"]
 							end
@@ -415,9 +418,12 @@ function cityscape.generate(minp, maxp, seed)
 					end
 				end
 
-				for _, p in pairs(pd[qx][qz]) do
-					ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + p[1] - 1, avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + lz + p[3] - 1)
-					p2data[ivm] = p[4]
+				if pc > 0 then
+					for i = 1,pc do
+						p = pd[i]
+						ivm = a:index(minp.x + (qx - 1) * rx + streetw + sidewalk + lx + p[1] - 1, avg + p[2], minp.z + (qz - 1) * rz + streetw + sidewalk + lz + p[3] - 1)
+						p2data[ivm] = p[4]
+					end
 				end
 			end
 		end

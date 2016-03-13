@@ -378,3 +378,48 @@ minetest.register_node("cityscape:crate", {
 	},
 	--after_dig_node = crate,
 })
+
+minetest.register_node("cityscape:swing_set", {
+	description = "Swing Set",
+	tiles = {"cityscape_swing_set.png"},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	drawtype = "nodebox",
+	node_box = { type = "fixed",
+		fixed = {
+			{1.5, 1.5, 0.5, 1.4, -0.5, 0.4},  -- pole 1
+			{-1.4, 1.5, 0.5, -1.5, -0.5, 0.4},  -- pole 2
+			{-1.4, 1.5, -0.4, -1.5, -0.5, -0.5},  -- pole 3
+			{1.5, 1.5, -0.4, 1.4, -0.5, -0.5},  -- pole 4
+			{1.5, 1.5, 0.5, 1.4, 1.4, -0.5},  -- cross 1
+			{-1.4, 1.5, 0.5, -1.5, 1.4, -0.5},  -- cross 2
+			{1.5, 1.5, 0.05, -1.5, 1.4, -0.05},  -- main
+			{0.71, 1.5, 0.01, 0.69, 0, -0.01},  -- line 1
+			{0.31, 1.5, 0.01, 0.29, 0, -0.01},  -- line 2
+			{-0.71, 1.5, 0.01, -0.69, 0, -0.01},  -- line 3
+			{-0.31, 1.5, 0.01, -0.29, 0, -0.01},  -- line 4
+			{0.7, 0.02, 0.1, 0.3, -0.02, -0.1},  -- seat 1
+			{-0.7, 0.02, 0.1, -0.3, -0.02, -0.1},  -- seat 2
+		} },
+	groups = {cracky = 2, level=2},
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_stone_defaults(),
+})
+
+minetest.register_node("cityscape:park_bench", {
+	description = "Park Bench",
+	tiles = {"default_wood.png"},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	drawtype = "nodebox",
+	node_box = { type = "fixed",
+		fixed = {
+			{1.0, 0.01, -0.25, -1.0, -0.01, 0.25},  -- seat
+			{1.0, 0.5, 0.23, -1.0, 0, 0.25},  -- back
+			{0.95, 0, -0.05, 0.85, -0.5, 0.05},  -- leg 1
+			{-0.95, 0, -0.05, -0.85, -0.5, 0.05},  -- leg 2
+		} },
+	groups = {choppy = 3, level=0},
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_wood_defaults(),
+})
