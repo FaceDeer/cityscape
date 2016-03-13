@@ -62,6 +62,7 @@ do
 		{"plate_glass_broken", "cityscape:silver_glass_broken", false, false},
 		{"bench", "cityscape:park_bench", false, false},
 		{"swing_set", "cityscape:swing_set", false, false},
+		{"doll", "cityscape:doll", false, false},
 		{"stair_road", "stairs:stair_road", true, false},
 		{"stair_stone", "stairs:stair_stone", false, false},
 		{"stair_pine", "stairs:stair_pine_wood", false, false},

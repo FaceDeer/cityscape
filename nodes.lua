@@ -423,3 +423,24 @@ minetest.register_node("cityscape:park_bench", {
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_wood_defaults(),
 })
+
+minetest.register_node("cityscape:doll", {
+	description = "Child's Doll",
+	tiles = {"wool_pink.png"},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	drawtype = "nodebox",
+	node_box = { type = "fixed",
+		fixed = {
+			{0.2, -0.41, 0.04, 0.1, -0.49, -0.04},  -- head
+			{0.1, -0.4, 0.075, 0, -0.5, -0.075},  -- body
+			{0.07, -0.43, 0.15, 0.03, -0.47, 0.075},  -- arm
+			{0.07, -0.43, -0.15, 0.03, -0.47, -0.075},  -- arm
+			{0, -0.4, 0.1, -0.1, -0.5, -0.1},  -- skirt
+			{-0.1, -0.43, 0.06, -0.2, -0.47, 0.02},  -- leg
+			{-0.1, -0.43, -0.06, -0.2, -0.47, -0.02},  -- leg
+		} },
+	groups = {dig_immediate = 3, attached_node = 1, flammable = 1},
+	on_place = minetest.rotate_and_place,
+	sounds = default.node_sound_wood_defaults(),
+})

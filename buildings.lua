@@ -425,6 +425,12 @@ local function park(data, param, dx, dy, dz)
 			elseif sr == 3 then
 				data[qx * 5 - 2][1][qz * 5 - 2] = node["swing_set"]
 				pstore(param, qx * 5 - 2, 1, qz * 5 - 2, math.random(4) - 1)
+			else
+				sr = math.random(30)
+				if sr == 1 then
+					data[qx * 5 - 2][1][qz * 5 - 2] = node["doll"]
+					pstore(param, qx * 5 - 2, 1, qz * 5 - 2, math.random(4) - 1)
+				end
 			end
 		end
 	end
