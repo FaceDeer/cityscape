@@ -268,7 +268,6 @@ function cityscape.generate(minp, maxp, seed)
 			return
 		end
 
-		print("*** "..cityscape.suburbs)
 		-- If there are no ramps, we might be able to fit a suburb block in.
 		if math.abs(alt_xn - alt) <= streetw and  math.abs(alt_zn - alt) <= streetw and math.abs(alt_xp - alt) <= 1 and math.abs(alt_zp - alt) <= 1 and math.random(10) <= cityscape.suburbs then
 			suburb = true
