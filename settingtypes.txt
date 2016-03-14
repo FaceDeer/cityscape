@@ -19,3 +19,7 @@ cityscape_divisions_x (Divisions X) int 3
 # While you can enter a range of one to four, note that
 # ramps will not work correctly if this is set to one.
 cityscape_divisions_z (Divisions Z) int 3
+
+# If a suburb block can exist, this is the chance in ten
+# that it will be created.
+cityscape_suburbs (Suburbs) int 3

@@ -444,3 +444,10 @@ minetest.register_node("cityscape:doll", {
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_wood_defaults(),
 })
+
+minetest.register_node("cityscape:carpet", {
+	description = "Carpet",
+	tiles = {"wool_blue.png", "default_stone.png", "default_stone.png"},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 2, level = 1},
+})

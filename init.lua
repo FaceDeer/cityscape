@@ -18,6 +18,10 @@ cityscape.desolation = tonumber(minetest.setting_get('cityscape_desolation')) or
 if cityscape.desolation < 0 or cityscape.desolation > 10 then
 	cityscape.desolation = 0
 end
+cityscape.suburbs = tonumber(minetest.setting_get('cityscape_suburbs')) or 3
+if cityscape.suburbs < 0 or cityscape.suburbs > 10 then
+	cityscape.suburbs = 3
+end
 
 function cityscape.clone_node(name)
 	local node = minetest.registered_nodes[name]
@@ -29,6 +33,7 @@ dofile(cityscape.path .. "/nodes.lua")
 dofile(cityscape.path .. "/deco_rocks.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")
+dofile(cityscape.path .. "/houses.lua")
 dofile(cityscape.path .. "/molotov.lua")
 
 cityscape.players_to_check = {}
