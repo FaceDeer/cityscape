@@ -156,7 +156,7 @@ local function simple(data, param, dx, dy, dz, mir)
 					data[x][y][z] = node["air"]
 				elseif wall_x and y == 1 and z == math.floor(dz / 2) then
 					data[x][y][z] = node["door"]
-					if (mir == 1 and x == yard + 2) or (mir == 2 and x ~= yard + 2) then
+					if (mir == 2) ~= (x == yard + 2) then
 						pstore(param, x, y, z, 1)
 					else
 						pstore(param, x, y, z, 3)

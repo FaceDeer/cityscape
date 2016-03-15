@@ -273,6 +273,10 @@ function cityscape.generate(minp, maxp, seed)
 			suburb = true
 		end
 
+		for ivm = 1,csize.x*csize.y*csize.z+1 do
+			p2data[ivm] = 0
+		end
+
 		-- This causes problems, but at least it clears out
 		-- most of the overlapping schematics.
 		for z = minp.z - bord_zn, maxp.z + bord_zp do
