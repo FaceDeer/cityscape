@@ -1,4 +1,6 @@
-minetest.register_node("cityscape:silver_glass", {
+minetest.register_alias("cityscape:manhole_cover", "doors:trapdoor_steel")
+
+minetest.register_node("cityscape:plate_glass", {
 	description = "Plate Glass",
 	drawtype = "glasslike",
 	paramtype = "light",
@@ -10,10 +12,11 @@ minetest.register_node("cityscape:silver_glass", {
 	groups = {cracky = 3, level=1},
 	sounds = default.node_sound_stone_defaults(),
 })
-newnode = cityscape.clone_node("cityscape:silver_glass")
+newnode = cityscape.clone_node("cityscape:plate_glass")
 newnode.tiles = {"cityscape_plate_glass_broken.png"}
 newnode.walkable = false
-minetest.register_node("cityscape:silver_glass_broken", newnode)
+minetest.register_node("cityscape:plate_glass_broken", newnode)
+minetest.register_alias("cityscape:glass_broken", "cityscape:plate_glass_broken")
 
 minetest.register_node("cityscape:road", {
 	description = "Road",
@@ -140,6 +143,23 @@ minetest.register_node("cityscape:roof", {
 	sounds = default.node_sound_stone_defaults(),
 	is_ground_content = false,
 })
+minetest.register_node("cityscape:roof_broken", {
+	description = "Roof",
+	tiles = {"cityscape_tarmac.png^cityscape_broken_3.png", "cityscape_ceiling.png^cityscape_broken_3.png", "default_stone.png"},
+	paramtype = "light",
+	paramtype2 = "facedir",
+	drawtype = "nodebox",
+	drop = "default:cobble",
+	node_box = { type = "fixed",
+		fixed = {
+			{0.5, 0.3, 0.5, -0.5, -0.5, -0.5}
+		}
+	},
+	sounds = default.node_sound_stone_defaults(),
+	groups = {cracky = 3, level=1, flammable = 3},
+	is_ground_content = false,
+})
+
 
 if default.register_fence then
 	default.register_fence("cityscape:fence_steel", {
@@ -450,4 +470,12 @@ minetest.register_node("cityscape:carpet", {
 	tiles = {"wool_blue.png", "default_stone.png", "default_stone.png"},
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 2, level = 1},
+})
+minetest.register_alias("cityscape:carpet_broken", "default:stone")
+
+minetest.register_node("cityscape:wood_broken", {
+	description = "Rotten Wood",
+	tiles = {"default_wood.png^cityscape_wood_rot.png"},
+	sounds = default.node_sound_wood_defaults(),
+	groups = {choppy = 3, level = 0, oddly_breakable_by_hand = 3},
 })

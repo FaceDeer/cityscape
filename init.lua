@@ -29,6 +29,34 @@ function cityscape.clone_node(name)
 	return node2
 end
 
+function cityscape.node(name)
+	if not cityscape.node_cache then
+		cityscape.node_cache = {}
+	end
+
+	if not cityscape.node_cache[name] then
+		cityscape.node_cache[name] = minetest.get_content_id(name)
+		--print("*** "..name..": "..cityscape.node_cache[name])
+		if name ~= "ignore" and cityscape.node_cache[name] == 127 then
+			print("*** Failure to find node: "..name)
+		end
+	end
+
+	return cityscape.node_cache[name]
+end
+
+function cityscape.breaker(node)
+	local sr = math.random(50)
+	if sr <= cityscape.desolation then
+		return "air"
+	elseif cityscape.desolation > 0 and sr / 5 <= cityscape.desolation then
+		return string.gsub(node, ".*:", "cityscape:").."_broken"
+	else
+		return node
+	end
+end
+
+
 dofile(cityscape.path .. "/nodes.lua")
 dofile(cityscape.path .. "/deco_rocks.lua")
 dofile(cityscape.path .. "/mapgen.lua")
