@@ -67,11 +67,7 @@ end
 
 local function stairwell(data, param, pos1, pos2, left)
 	local dz, px, py, pz
-	if left then
-		dz = 0
-	else
-		dz = 2
-	end
+	dz = (left and 0 or 2)
 
 	px = math.floor((pos2.x - pos1.x - 4) / 2)
 	py = math.min(pos2.y, pos1.y)
@@ -126,10 +122,7 @@ local function gotham(data, param, dx, dy, dz)
 		conc = "cityscape:concrete"..c
 	end
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
+	local ra = math.random(2) - 1
 	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	-- all this for gargoyles...
@@ -140,19 +133,11 @@ local function gotham(data, param, dx, dy, dz)
 				y = y - (y % 4)
 				if (x == 0 or x == dx + 1) and z % 5 == 4 then
 					data[x][y][z] = node("cityscape:gargoyle")
-					if x == 0 then
-						dir = 18
-					else
-						dir = 12
-					end
+					dir = (x == 0 and 18 or 12)
 					pstore(param, x, y, z, dir)
 				elseif (z == 0 or z == dz + 1) and x % 5 == 4 then
 					data[x][y][z] = node("cityscape:gargoyle")
-					if z == 0 then
-						dir = 9
-					else
-						dir = 7
-					end
+					dir = (z == 0 and 9 or 7)
 					pstore(param, x, y, z, dir)
 				end
 			end
@@ -237,10 +222,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 		conc = "cityscape:concrete"..c
 	end
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
+	local ra = math.random(2) - 1
 	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	for z = 1,dz do
@@ -294,10 +276,7 @@ end
 local function simple(data, param, dx, dy, dz, slit)
 	local develop, wall_x, wall_z, floors, conc, c
 
-	local ra = 0
-	if math.random(2) == 1 then
-		ra = 1
-	end
+	local ra = math.random(2) - 1
 	floors = math.random(2, math.floor(dy / 4) - (1 - ra))
 
 	if floors < 6 then

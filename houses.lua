@@ -47,11 +47,7 @@ end
 
 local function stairwell(data, param, pos1, pos2, left)
 	local dz, px, py, pz
-	if left then
-		dz = 0
-	else
-		dz = 2
-	end
+	dz = (left and 0 or 2)
 
 	px = math.floor((pos2.x - pos1.x - 4) / 2)
 	py = math.min(pos2.y, pos1.y)
