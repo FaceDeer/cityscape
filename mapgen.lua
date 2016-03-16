@@ -28,15 +28,15 @@ end
 
 
 local function clear_bd(plot_buf, plot_sz_x, dy, plot_sz_z)
-	for k = 0,plot_sz_x+1 do
+	for k = 0, plot_sz_x + 1 do
 		if not plot_buf[k] then
 			plot_buf[k] = {}
 		end
-		for l = 0,dy do
+		for l = 0, dy do
 			if not plot_buf[k][l] then
 				plot_buf[k][l] = {}
 			end
-			for m = 0,plot_sz_z+1 do
+			for m = 0, plot_sz_z + 1 do
 				plot_buf[k][l][m] = nil
 			end
 		end
@@ -64,6 +64,15 @@ function cityscape.generate(minp, maxp, seed)
 		print("Cityscape is manually collecting garbage as memory use has exceeded 500K.")
 		collectgarbage("collect")
 	end
+
+	-- This may fix problems with the generate function getting
+	-- called twice and producing split buildings.
+	-- The same buildings should be generated each time if we
+	-- use the same seed (based on perlin noise).
+	local seed_noise = minetest.get_perlin({offset = 0, scale = 32768,
+	seed = 5202, spread = {x = 80, y = 80, z = 80}, octaves = 2,
+	persist = 0.4, lacunarity = 2})
+	math.randomseed(seed_noise:get2d({x=minp.x, y=minp.z}))
 
 	local index = 0
 	local alt = 0
@@ -112,17 +121,17 @@ function cityscape.generate(minp, maxp, seed)
 	end
 
 	local streetw = 5    -- street width
+	local ramp_streetw = streetw
 	local sidewalk = 2   -- sidewalk width
 	-- divide the block into this many buildings
-	local mx, mz = cityscape.divisions_x, cityscape.divisions_z
+	local mx, mz, mzs = cityscape.divisions_x, cityscape.divisions_z, cityscape.divisions_z
 
 	local div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
 	local div_sz_z = math.floor(csize.z / mz)
-	local rem_x = math.floor((csize.x % div_sz_x) / 2)  -- left-over blocks when the divisions don't divide evenly
-	local rem_z = math.floor((csize.z % div_sz_z) / 2)
-	local plot_sz_x = (div_sz_x - streetw - sidewalk * 2)  -- size we can actually build on
-	local plot_sz_z = (div_sz_z - streetw - sidewalk * 2)
+	local ramp_sz_x = div_sz_x
+	local ramp_sz_z = div_sz_z
 	local div_off_x, div_off_z  -- nodes into the current division
+	local ramp_off_x, ramp_off_z
 	local sec_x, sec_z  -- which division we're in
 	local alt_next  -- altitude of the next block
 	local dir, diro  -- direction of ramp blocks
@@ -176,22 +185,40 @@ function cityscape.generate(minp, maxp, seed)
 		ivm_zp = ivm_zp + a.ystride
 	end
 
+	local alt_dxn = math.abs(alt_xn - alt)
+	local alt_dxp = math.abs(alt_xp - alt)
+	local alt_dzn = math.abs(alt_zn - alt)
+	local alt_dzp = math.abs(alt_zp - alt)
+
 	-- If the ramps would be too long, don't bother.
-	if math.abs(alt_xn - alt) >= div_sz_x or math.abs(alt_xp - alt) >= div_sz_x
-		or math.abs(alt_zn - alt) >= div_sz_z or math.abs(alt_zp - alt) >= div_sz_z then
+	if alt_dxn >= div_sz_x or alt_dzn >= div_sz_z
+		or alt_dxp >= div_sz_x or alt_dzp >= div_sz_z then
 		return
 	end
 
 	-- If there are no ramps, we might be able to fit a suburb block in.
-	if math.abs(alt_xn - alt) <= streetw and  math.abs(alt_zn - alt) <= streetw
-		and math.abs(alt_xp - alt) <= 1 and math.abs(alt_zp - alt) <= 1
-		and math.random(10) <= cityscape.suburbs then
-		suburb = true
+	suburb = (alt_dxn <= 1 and alt_dzn <= 1 and alt_dxp <= 1 and alt_dzp <= 1
+	and math.random(10) <= cityscape.suburbs)
+
+	-- Suburbs will have to have fixed characteristics. They're too
+	-- complicated to fool around with.
+	local sub_off = (suburb and 3 or 0)
+	if suburb then
+		mx = 2
+		mz = 1
+		mzs = 4
+		streetw = 3
+		sidewalk = 1
+		div_sz_x = math.floor((csize.x - sub_off) / mx)
+		div_sz_z = math.floor((csize.z - sub_off) / mz)
 	end
 
-	for ivm = 1,csize.x*csize.y*csize.z+1 do
-		p2data[ivm] = 0
-	end
+  -- left-over blocks when the divisions don't divide evenly
+	local rem_x = math.floor((csize.x % (div_sz_x + sub_off / 2)) / 2)
+	local rem_z = math.floor((csize.z % (div_sz_z + sub_off / 2)) / 2)
+  -- size we can actually build on
+	local plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / (suburb and 2 or 1))
+	local plot_sz_z = math.floor((div_sz_z - streetw - sidewalk * 2) / (suburb and 4 or 1))
 
 	-- This causes problems, but at least it clears out
 	-- most of the overlapping schematics.
@@ -201,7 +228,7 @@ function cityscape.generate(minp, maxp, seed)
 				if not ((x < minp.x - (sidewalk + 1) or x > maxp.x + (sidewalk + 1))
 					and (z < minp.z - (sidewalk + 1) or z > maxp.z + (sidewalk + 1))) then
 					ivm = a:index(x, minp.y, z)
-					for y = minp.y, maxp.y do
+					for y = minp.y, maxp.y + 15 do
 						if y <= alt and y > min - 5 then
 							data[ivm] = node(breaker("cityscape:concrete"))
 						elseif y > min - 5 then
@@ -214,78 +241,58 @@ function cityscape.generate(minp, maxp, seed)
 		end
 	end
 
-	-- This may fix problems with the generate function getting
-	-- called twice and producing split buildings.
-	-- The same buildings should be generated each time if we
-	-- use the same seed (based on perlin noise).
-	local seed_noise = minetest.get_perlin({offset = 0, scale = 32768,
-	seed = 5202, spread = {x = 80, y = 80, z = 80}, octaves = 2,
-	persist = 0.4, lacunarity = 2})
-	math.randomseed(seed_noise:get2d({x=minp.x, y=minp.z}))
-
 	-- Generate the sewer water levels.
-	for i = 1,mx do
+	for i = 1, mx do
 		if not sw[i] then
 			sw[i] = {}
 		end
-		for j = 1,mz do
+		for j = 1, mz do
 			sw[i][j] = math.random(0,2)
 		end
-	end
-
-	-- Suburbs will have to have fixed characteristics. They're too
-	-- complicated to fool around with.
-	if suburb then
-		streetw = 3
-		sidewalk = 1
-		div_sz_x = math.floor((csize.x - 3) / 2)
-		div_sz_z = csize.z - 3
-		rem_x = math.floor((csize.x % (div_sz_x + 1.5)) / 2)
-		rem_z = 0
-		plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / 2)
-		plot_sz_z = math.floor((div_sz_z - streetw - sidewalk * 2) / 4)
 	end
 
 	local dx, dz
 	for z = minp.z, maxp.z do
 		for x = minp.x, maxp.x do
-			ivm = a:index(x, minp.y, z)
-			div_off_x = math.floor((x - minp.x - rem_x) % div_sz_x)
-			div_off_z = math.floor((z - minp.z - rem_z) % div_sz_z)
-			sec_x = math.floor((x - minp.x) / div_sz_x) + 1
-			sec_z = math.floor((z - minp.z) / div_sz_z) + 1
+			dx = x - minp.x
+			dz = z - minp.z
+
+			div_off_x = math.floor((dx - rem_x) % div_sz_x)
+			div_off_z = math.floor((dz - rem_z) % div_sz_z)
+			ramp_off_x = math.floor((dx - rem_x + sub_off) % ramp_sz_x)
+			ramp_off_z = math.floor((dz - rem_z + sub_off) % ramp_sz_z)
+			sec_x = math.floor(dx / div_sz_x) + 1
+			sec_z = math.floor(dz / div_sz_z) + 1
 
 			street = div_off_x < streetw or div_off_z < streetw
-			street_center_x = (div_off_x == math.floor(streetw / 2) and div_off_z / 2 == math.floor(div_off_z / 2)) and not (div_off_x < streetw and div_off_z < streetw)
-			street_center_z = (div_off_z == math.floor(streetw / 2) and div_off_x / 2 == math.floor(div_off_x / 2)) and not (div_off_x < streetw and div_off_z < streetw)
-			ramp = (div_off_x < streetw and ((sec_x > 1 or mx == 1) and sec_x <= mx)) or (div_off_z < streetw and ((sec_z > 1 or mz == 1) and sec_z <= mz))
+			street_center_x = (div_off_x == math.floor(streetw / 2) and div_off_z % 2 == 0) and not (div_off_x < streetw and div_off_z < streetw)
+			street_center_z = (div_off_z == math.floor(streetw / 2) and div_off_x % 2 == 0) and not (div_off_x < streetw and div_off_z < streetw)
+			ramp = (((dz < alt_dzn) or (maxp.z - z < alt_dzp)) and (ramp_off_x < ramp_streetw and dx > streetw and maxp.x - x > streetw)) or (((dx < alt_dxn) or (maxp.x - x < alt_dxp)) and (ramp_off_z < ramp_streetw and dz > streetw and maxp.z - z > streetw))
 			streetlight = div_off_x == streetw and div_off_z == streetw
 			manhole = (div_off_x == math.floor(streetw / 2)) and (div_off_z == math.floor(streetw / 2))
 			xlimit = x == minp.x or x == maxp.x
 			zlimit = z == minp.z or z == maxp.z
-			dx = x - minp.x
-			dz = z - minp.z
 
 			-- calculating ramps
 			alt_next = alt
 			dir = 0
-			if dx <= dz and dx + dz <= csize.x and math.abs(alt - alt_xn) > math.abs(x - minp.x) then
+			if dx <= dz and dx + dz <= csize.x and alt_dxn > dx then
 				if alt > alt_xn then
-					alt_next = alt_xn + (x - minp.x)
+					alt_next = alt_xn + dx
 				else
-					alt_next = alt_xn - (x - minp.x)
+					alt_next = alt_xn - dx
 				end
 				dir = 3
 				diro = 1
-			elseif dx >= dz and dx + dz <= csize.x and math.abs(alt - alt_zn) > math.abs(z - minp.z) then
+			elseif dx >= dz and dx + dz <= csize.x and alt_dzn > dz then
 				if alt > alt_zn then
-					alt_next = alt_zn + (z - minp.z)
+					alt_next = alt_zn + dz
 				else
-					alt_next = alt_zn - (z - minp.z)
+					alt_next = alt_zn - dz
 				end
 				dir = 4
 				diro = 0
-			elseif dx >= dz and dx + dz >= csize.x and math.abs(alt - alt_xp) > math.abs(maxp.x - x) then
+			elseif dx >= dz and dx + dz >= csize.x and alt_dxp > maxp.x - x then
 				if alt > alt_xp then
 					alt_next = alt_xp + (maxp.x - x)
 				else
@@ -293,7 +300,7 @@ function cityscape.generate(minp, maxp, seed)
 				end
 				dir = 1
 				diro = 3
-			elseif dx <= dz and dx + dz >= csize.z and math.abs(alt - alt_zp) > math.abs(maxp.z - z) then
+			elseif dx <= dz and dx + dz >= csize.z and alt_dzp > maxp.z - z then
 				if alt > alt_zp then
 					alt_next = alt_zp + (maxp.z - z)
 				else
@@ -303,7 +310,11 @@ function cityscape.generate(minp, maxp, seed)
 				diro = 4
 			end
 
+			ivm = a:index(x, minp.y, z)
 			for y = minp.y, maxp.y + 15 do
+				-- Clear the existing param2 data.
+				p2data[ivm] = 0
+
 				if y == alt_next + 1 and ramp and alt_next < alt then
 					-- ramp down
 					data[ivm] = node("stairs:stair_road")
@@ -317,7 +328,6 @@ function cityscape.generate(minp, maxp, seed)
 						data[ivm] = node("air")
 					else
 						data[ivm] = node("cityscape:manhole_cover")
-						p2data[ivm] = 0
 					end
 				elseif sewer and street and alt_next == alt and y <= alt and manhole then
 					if cityscape.desolation > 0 then
@@ -326,18 +336,15 @@ function cityscape.generate(minp, maxp, seed)
 						data[ivm] = node("default:ladder")
 						p2data[ivm] = 4
 					end
-				elseif sewer and street and (y - minp.y) < sw[math.min(sec_x,3)][math.min(sec_z,3)] then
+				elseif sewer and street and (y - minp.y) < sw[math.min(sec_x, mx)][math.min(sec_z, mz)] then
 					data[ivm] = node("default:water_source")
 				elseif sewer and street and y < minp.y + 3 then
 					data[ivm] = node("air")
-				elseif not suburb and y == alt and (not ramp or alt_next == alt) and street_center_x then
+				elseif not suburb and y == alt and not ramp and street_center_x then
 					data[ivm] = node("cityscape:road_yellow_line")
-				elseif not suburb and y == alt and (not ramp or alt_next == alt) and street_center_z then
+				elseif not suburb and y == alt and not ramp and street_center_z then
 					data[ivm] = node("cityscape:road_yellow_line")
 					p2data[ivm] = 21
-				elseif y == alt_next and ramp then
-					-- ramp normal
-					data[ivm] = node(breaker("cityscape:road"))
 				elseif y < alt_next and y > min - 5 and ramp then
 					-- ramp support
 					data[ivm] = node("default:stone")
@@ -351,7 +358,6 @@ function cityscape.generate(minp, maxp, seed)
 					data[ivm] = node(breaker("cityscape:road"))
 				elseif y < alt and y > min - 5 and street and not ramp then
 					data[ivm] = node("default:stone")
-					street = div_off_x < streetw or div_off_z < streetw
 				elseif suburb and y == alt and not street and (div_off_x == streetw or div_off_x == div_sz_x - 1 or div_off_z == streetw or div_off_z == div_sz_z - 1) then
 					data[ivm] = node(breaker("cityscape:sidewalk"))
 				elseif suburb and y == alt and not street then
@@ -381,57 +387,25 @@ function cityscape.generate(minp, maxp, seed)
 	end
 
 	local p2, p2_ct  -- param2 (rotation) value and count
-	if suburb then
-		local mm  -- which direction to build houses so they face the street
-		for sec_z = 1,4 do
-			for sec_x = 1,2 do
-				for mir = 1,2 do
-					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
-					p2_ct = cityscape.house(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z, mir)
-					for iz = 0,plot_sz_z+1 do
-						for ix = 0,plot_sz_x+1 do
-							mm = 1
-							if mir == 2 then
-								mm = -1
-							end
-							ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * ix) - 1, alt, minp.z + (sec_z - 1) * plot_sz_z + streetw + sidewalk + rem_z + iz - 1)
-							for y = 0,(maxp.y - alt + 1) do
-								if plot_buf[ix][y][iz] then
-									data[ivm] = plot_buf[ix][y][iz]
-								elseif y > 0 then
-									data[ivm] = node("air")
-								end
-								ivm = ivm + a.ystride
-							end
-						end
-					end
-
-					if p2_ct > 0 then
-						for i = 1,p2_ct do
-							p2 = p2_buf[i]
-							ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (sec_z - 1) * plot_sz_z + streetw + sidewalk + rem_z + p2[3] - 1)
-							p2data[ivm] = p2[4]
-						end
-					end
-				end
-			end
-		end
-
-		for iz = minp.z + streetw + sidewalk + rem_z, maxp.z - streetw - sidewalk - rem_z do
-			for sec_x = 1,2 do
-				ivm = a:index(minp.x + (sec_x - 1) * div_sz_x + plot_sz_x + streetw + sidewalk + rem_x, alt + 1, iz)
-				data[ivm] = node("default:fence_wood")
-			end
-		end
-	else
-		for sec_z = 1,mz do
-			for sec_x = 1,mx do
+	local mm  -- which direction to build houses so they face the street
+	for sec_z = 1, mzs do
+		for sec_x = 1, mx do
+			for mir = 1, (suburb and 2 or 1) do
 				clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
-				p2_ct = cityscape.build(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z)
-				for iz = 0,plot_sz_z+1 do
-					for ix = 0,plot_sz_x+1 do
-						ivm = a:index(minp.x + (sec_x - 1) * div_sz_x + streetw + sidewalk + rem_x + ix - 1, alt, minp.z + (sec_z - 1) * div_sz_z + streetw + sidewalk + rem_z + iz - 1)
-						for y = 0,(maxp.y - alt + 1) do
+				if suburb then
+					p2_ct = cityscape.house(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z, mir)
+				else
+					p2_ct = cityscape.build(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z)
+				end
+
+				for iz = 0, plot_sz_z + 1 do
+					for ix = 0, plot_sz_x + 1 do
+						mm = 1
+						if mir == 2 then
+							mm = -1
+						end
+						ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * ix) - 1, alt, minp.z + (sec_z - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + iz - 1)
+						for y = 0, (maxp.y - alt + 1) do
 							if plot_buf[ix][y][iz] then
 								data[ivm] = plot_buf[ix][y][iz]
 							elseif y > 0 then
@@ -443,12 +417,21 @@ function cityscape.generate(minp, maxp, seed)
 				end
 
 				if p2_ct > 0 then
-					for i = 1,p2_ct do
+					for i = 1, p2_ct do
 						p2 = p2_buf[i]
-						ivm = a:index(minp.x + (sec_x - 1) * div_sz_x + streetw + sidewalk + rem_x + p2[1] - 1, alt + p2[2], minp.z + (sec_z - 1) * div_sz_z + streetw + sidewalk + rem_z + p2[3] - 1)
+						ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (sec_z - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + p2[3] - 1)
 						p2data[ivm] = p2[4]
 					end
 				end
+			end
+		end
+	end
+
+	if suburb then
+		for iz = minp.z + streetw + sidewalk + rem_z, maxp.z - streetw - sidewalk - rem_z do
+			for sec_x = 1, 2 do
+				ivm = a:index(minp.x + (sec_x - 1) * div_sz_x + plot_sz_x + streetw + sidewalk + rem_x, alt + 1, iz)
+				data[ivm] = node("default:fence_wood")
 			end
 		end
 	end
@@ -470,9 +453,8 @@ function cityscape.generate(minp, maxp, seed)
 		end
 	end
 
-
 	local x, z
-	for i = 1,4 do
+	for i = 1, 4 do
 		if math.random(2) == 1 then
 			x = minp.x + (math.random(mx) - 1) * div_sz_x + (math.random(2) - 1) * math.floor(streetw / 2) + rem_x + 1
 			z = math.random(math.floor(csize.z / 2)) + math.floor(csize.z / 4) + minp.z

@@ -156,7 +156,7 @@ local function simple(data, param, dx, dy, dz, mir)
 						pstore(param, x, y, z, 3)
 					end
 				elseif (wall_x or wall_z) and y == 2 and math.random(2) == 1 then
-					data[x][y][z] = node(breaker("default:glass"))
+					data[x][y][z] = node(breaker("cityscape:plate_glass"))
 				elseif wall_x or wall_z then
 					data[x][y][z] = node(breaker("default:wood"))
 				elseif x > yard + 2 and x < dx - yard + 1 and z > yard + 1 and z < dz - yard then
