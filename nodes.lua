@@ -264,6 +264,58 @@ newnode = cityscape.clone_node("default:desert_stonebrick")
 newnode.tiles = {"default_desert_stone_brick.png^cityscape_broken_3_low.png"}
 minetest.register_node("cityscape:desert_stonebrick_broken", newnode)
 
+cityscape.current_cars = {}
+local function start_non_laggy_car(player, node)
+	if not player or not node then
+		return
+	end
+
+	local name = player:get_player_name()
+	if not cityscape.current_cars[name] then
+		local tex = "cityscape_car_blue.png"
+		if node.name == "cityscape:car_broken" then
+			tex = "cityscape_car_wreck.png"
+		end
+		cityscape.current_cars[name] = {}
+		cityscape.current_cars[name].properties = player:get_properties()
+		cityscape.current_cars[name].physics_override = player:get_physics_override()
+		player:set_properties({visual="mesh",visual_size = {x=1, y=1}, mesh = "cars_car.obj", textures = {tex}})
+		player:set_physics_override({speed=(minetest.setting_getbool("disable_anticheat") == true and 3 or 1), jump=0, gravity=2})
+	end
+end
+
+local function stop_non_laggy_car(player)
+	if not player then
+		return
+	end
+
+	local name = player:get_player_name()
+	if cityscape.current_cars[name] then
+		player:set_properties(cityscape.current_cars[name].properties)
+		player:set_physics_override(cityscape.current_cars[name].physics_override)
+		cityscape.current_cars[name] = nil
+	end
+end
+
+local function click_non_laggy_car(pos, node, clicker, itemstack, pointed_thing)
+	if not pos or not node or not clicker then
+		return
+	end
+
+	minetest.remove_node(pos)
+	itemstack:add_item(node.name)
+	start_non_laggy_car(clicker, node)
+end
+
+local function drop_non_laggy_car(itemstack, dropper, pos)
+	if not dropper then
+		return
+	end
+
+	stop_non_laggy_car(dropper)
+	return minetest.rotate_and_place(itemstack, dropper, pos)
+end
+
 minetest.register_node("cityscape:car", {
 	description = "Car",
 	drawtype = 'mesh',
@@ -293,8 +345,9 @@ minetest.register_node("cityscape:car", {
 		},
 	},
 },
+	on_rightclick = click_non_laggy_car,
 	groups = {cracky = 1, level = 2, flammable = 3},
-	on_place = minetest.rotate_and_place,
+	on_place = drop_non_laggy_car,
 	sounds = default.node_sound_stone_defaults(),
 })
 newnode = cityscape.clone_node("cityscape:car")
