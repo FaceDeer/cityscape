@@ -279,7 +279,7 @@ local function start_non_laggy_car(player, node)
 		cityscape.current_cars[name] = {}
 		cityscape.current_cars[name].properties = player:get_properties()
 		cityscape.current_cars[name].physics_override = player:get_physics_override()
-		player:set_properties({visual="mesh",visual_size = {x=1, y=1}, mesh = "cars_car.obj", textures = {tex}})
+		player:set_properties({visual="mesh",visual_size = {x=1, y=1}, mesh = "cars_car.obj", textures = {tex}, makes_footstep_sound = false})
 		player:set_physics_override({speed=(minetest.setting_getbool("disable_anticheat") == true and 3 or 1), jump=0, gravity=2})
 	end
 end
