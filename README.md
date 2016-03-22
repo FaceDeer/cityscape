@@ -9,8 +9,8 @@ City blocks will generate any place that's relatively flat and largely above wat
 
 The source is available on github.
 
-Code: WTFPL, textures: CC0
+Code: CC0 and others, textures: CC0 and others
 
-Mod dependencies: default
+Mod dependencies: default, stairs, doors
 
 Download: https://github.com/duane-r/cityscape/archive/master.zip
