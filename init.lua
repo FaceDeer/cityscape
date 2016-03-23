@@ -1,18 +1,11 @@
 cityscape = {}
 cityscape.version = "1.0"
+cityscape.path = minetest.get_modpath(minetest.get_current_modname())
+cityscape.first_flag = 0
 
-cityscape.path = minetest.get_modpath("cityscape")
 cityscape.vacancies = tonumber(minetest.setting_get('cityscape_vacancies')) or 0
 if cityscape.vacancies < 0 or cityscape.vacancies > 10 then
 	cityscape.vacancies = 0
-end
-cityscape.divisions_x = tonumber(minetest.setting_get('cityscape_divisions_x')) or 3
-if cityscape.divisions_x < 0 or cityscape.divisions_x > 4 then
-	cityscape.divisions_x = 3
-end
-cityscape.divisions_z = tonumber(minetest.setting_get('cityscape_divisions_z')) or 3
-if cityscape.divisions_z < 0 or cityscape.divisions_z > 4 then
-	cityscape.divisions_z = 3
 end
 cityscape.desolation = tonumber(minetest.setting_get('cityscape_desolation')) or 0
 if cityscape.desolation < 0 or cityscape.desolation > 10 then
@@ -22,6 +15,13 @@ cityscape.suburbs = tonumber(minetest.setting_get('cityscape_suburbs')) or 3
 if cityscape.suburbs < 0 or cityscape.suburbs > 10 then
 	cityscape.suburbs = 3
 end
+
+
+minetest.register_on_mapgen_init(function(mgparams)
+	minetest.set_mapgen_params({mgname="valleys"})
+	minetest.setting_set("mg_valleys_lava_features", 0)
+	minetest.setting_set("mg_valleys_water_features", 0)
+end)
 
 function cityscape.clone_node(name)
 	local node = minetest.registered_nodes[name]
@@ -36,7 +36,6 @@ function cityscape.node(name)
 
 	if not cityscape.node_cache[name] then
 		cityscape.node_cache[name] = minetest.get_content_id(name)
-		--print("*** "..name..": "..cityscape.node_cache[name])
 		if name ~= "ignore" and cityscape.node_cache[name] == 127 then
 			print("*** Failure to find node: "..name)
 		end

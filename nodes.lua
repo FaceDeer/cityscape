@@ -24,6 +24,9 @@ minetest.register_node("cityscape:road", {
 	sounds = default.node_sound_stone_defaults(),
 	groups = {cracky = 2, level = 1},
 })
+newnode = cityscape.clone_node("cityscape:road")
+newnode.tiles = {"cityscape_tarmac.png^[brighten"}
+minetest.register_node("cityscape:road_white", newnode)
 
 minetest.register_node("cityscape:road_broken", {
 	description = "Road",
