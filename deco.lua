@@ -25,7 +25,7 @@ end
 
 -- Copy all the decorations except the ones I don't like.
 --  This is currently used to remove the default trees.
-local bad_deco = {"apple_tree", "pine_tree", "jungle_tree", }
+local bad_deco = {"apple_tree", "pine_tree", "jungle_tree", "acacia_tree", "aspen_tree", }
 local decos = {}
 for id, deco_table in pairs(minetest.registered_decorations) do
 	if type(deco_table.schematic) ~= "string" or not table.contains_substring(bad_deco, deco_table.schematic) then

@@ -209,7 +209,7 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	end
 	avg = math.floor(avg / 40 / 40 + 0.5)
 
-	return min, (max - min)
+	return avg, (max - min)
 end
 
 
@@ -267,13 +267,15 @@ function cityscape.generate(minp, maxp, seed)
 	local index = 1
 	for z = minp.z, maxp.z do
 		for x = minp.x, maxp.x do
+			local qx = math.floor((x - minp.x) / 40) + 1
+			local qz = math.floor((z - minp.z) / 40) + 1
 			road_n = road_map[i_road]
 			last_road_nx = road_map[i_road - 1]
 			last_road_nz = road_map[i_road - (csize.x + 2)]
 			local road = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
 			local clear = false
 			--local city = math.abs(road_n) < 10
-			local city = q_data[math.floor((x - minp.x) / 40) + 1][math.floor((z - minp.z) / 40) + 1] ~= nil
+			local city = q_data[qx][qz] ~= nil
 			local height = get_height(x, z, heightmap, csize, minp, maxp)
 			local y = math.max(height, 1)
 
@@ -305,7 +307,27 @@ function cityscape.generate(minp, maxp, seed)
 				write = true
 			end
 
-			if city and ((x - minp.x) % 40 < 5 or (z - minp.z) % 40 < 5) then
+			-- Try to connect +x road to +x with a ramp.
+			-- Try to connect +z road to +z with a ramp.
+			-- Try to connect -x-z corner to -x with two ramps.
+			--   If not possible, try -z.
+			if city and q_data[qx][qz] and q_data[qx][qz].alt and ((x - minp.x) % 40 < 5 or (z - minp.z) % 40 < 5) then
+				local height = q_data[qx][qz].alt
+				if height > 1 and height <= maxp.y and height >= minp.y then
+					local ivm = a:index(x, height - 20, z)
+					for y = height - 20, math.min(height + 20, maxp.y) do
+						if y < height then
+							data[ivm] = node("default:stone")
+						elseif y == height then
+							data[ivm] = node("cityscape:road")
+						else
+							data[ivm] = node("air")
+						end
+						ivm = ivm + a.ystride
+					end
+				end
+				write = true
+			elseif city and ((x - minp.x) % 40 < 5 or (z - minp.z) % 40 < 5) then
 				local height = -32000
 				if x - minp.x < 5 and z - minp.z < 40 then
 					height = math.max(height, math.floor((ramp_data[2][1][2] - ramp_data[2][1][1]) * (((z - minp.z) % 40) / 40) + ramp_data[2][1][1] + 0.5))
