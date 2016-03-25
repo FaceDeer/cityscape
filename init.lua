@@ -23,6 +23,24 @@ minetest.register_on_mapgen_init(function(mgparams)
 	minetest.setting_set("mg_valleys_water_features", 0)
 end)
 
+-- Modify a node to add a group
+function minetest.add_group(node, groups)
+	local def = minetest.registered_items[node]
+	if not def then
+		return false
+	end
+	local def_groups = def.groups or {}
+	for group, value in pairs(groups) do
+		if value ~= 0 then
+			def_groups[group] = value
+		else
+			def_groups[group] = nil
+		end
+	end
+	minetest.override_item(node, {groups = def_groups})
+	return true
+end
+
 function cityscape.clone_node(name)
 	local node = minetest.registered_nodes[name]
 	local node2 = table.copy(node)
@@ -57,6 +75,7 @@ end
 
 
 dofile(cityscape.path .. "/nodes.lua")
+dofile(cityscape.path .. "/deco.lua")
 dofile(cityscape.path .. "/deco_rocks.lua")
 dofile(cityscape.path .. "/mapgen.lua")
 dofile(cityscape.path .. "/buildings.lua")
