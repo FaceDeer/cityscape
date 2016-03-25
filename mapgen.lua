@@ -1,5 +1,28 @@
 local node = cityscape.node
 
+local good_nodes, grassy = {}, {}
+do
+	local t = { "cityscape:concrete", "cityscape:concrete2",
+	"cityscape:concrete3", "cityscape:concrete4", "cityscape:concrete5",
+	"cityscape:sidewalk", "cityscape:floor_ceiling", "cityscape:roof",
+	"default:brick", "default:sandstonebrick", "default:stonebrick",
+	"default:desert_stonebrick", "cityscape:concrete_broken",
+	"cityscape:concrete2_broken", "cityscape:concrete3_broken",
+	"cityscape:concrete4_broken", "cityscape:concrete5_broken",
+	"cityscape:sidewalk_broken", "cityscape:sandstonebrick_broken",
+	"cityscape:stonebrick_broken", "cityscape:desert_stonebrick_broken",
+	"cityscape:floor_ceiling_broken", "cityscape:road", "cityscape:road_broken",
+	"cityscape:road_yellow_line", "cityscape:plate_glass", }
+	for _, i in pairs(t) do
+		good_nodes[node(i)] = true
+	end
+
+	t = { "cityscape:concrete_broken", "cityscape:sidewalk_broken", }
+	for _, i in pairs(t) do
+		grassy[node(i)] = true
+	end
+end
+
 -- Read the noise parameters from the actual mapgen.
 local function get_cpp_setting_noise(name, default)
 	local noise
@@ -162,13 +185,16 @@ local function get_height(x, z, heightmap, csize, minp, maxp)
 end
 
 function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
+	local mx, mz = 2, 2
+	local div_sz_x = math.floor(csize.x / mx)
+	local div_sz_z = math.floor(csize.z / mz)
 	local i_road = csize.x + 4
 	local avg = 0
 	local min = 31000
 	local max = -31000
 	local city = 0
-	for z = minp.z + ((qz - 1) * 40), minp.z + (qz * 40) do
-		for x = minp.x + ((qx - 1) * 40), minp.x + (qx * 40) do
+	for z = minp.z + ((qz - 1) * div_sz_z), minp.z + (qz * div_sz_z) do
+		for x = minp.x + ((qx - 1) * div_sz_x), minp.x + (qx * div_sz_x) do
 			i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
 
 			local road_n = road_map[i_road]
@@ -202,12 +228,12 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 		end
 	end
 
-	city = city / 40 / 40
+	city = city / div_sz_x / div_sz_z
 	if city < 0.5 then
 		--print("("..minp.x..","..minp.z.."): not enough city")
 		return nil
 	end
-	avg = math.floor(avg / 40 / 40 + 0.5)
+	avg = math.floor(avg / div_sz_x / div_sz_z + 0.5)
 
 	return avg, (max - min)
 end
@@ -220,6 +246,11 @@ function cityscape.generate(minp, maxp, seed)
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
 	local heightmap = minetest.get_mapgen_object("heightmap")
+
+	-- divide the block into this many buildings
+	local mx, mz = 2, 2
+	local div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
+	local div_sz_z = math.floor(csize.z / mz)
 
 	local write = false
 
@@ -244,8 +275,8 @@ function cityscape.generate(minp, maxp, seed)
 	local last_road_nx
 	local last_road_nz
 
-	for qz = 1, 2 do
-		for qx = 1, 2 do
+	for qz = 1, mz do
+		for qx = 1, mx do
 			q_data[qx][qz].alt, q_data[qx][qz].range = get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 		end
 	end
@@ -263,118 +294,148 @@ function cityscape.generate(minp, maxp, seed)
 	ramp_data[2][2][2] = get_height(minp.x + 43, minp.z + 41, heightmap, csize, minp, maxp)
 	ramp_data[2][2][3] = get_height(minp.x + 43, maxp.z, heightmap, csize, minp, maxp)
 
-	local i_road = csize.x + 4
-	local index = 1
-	for z = minp.z, maxp.z do
-		for x = minp.x, maxp.x do
-			local qx = math.floor((x - minp.x) / 40) + 1
-			local qz = math.floor((z - minp.z) / 40) + 1
-			road_n = road_map[i_road]
-			last_road_nx = road_map[i_road - 1]
-			last_road_nz = road_map[i_road - (csize.x + 2)]
-			local road = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
-			local clear = false
-			--local city = math.abs(road_n) < 10
-			local city = q_data[qx][qz] ~= nil
-			local height = get_height(x, z, heightmap, csize, minp, maxp)
-			local y = math.max(height, 1)
+	-- Try to connect +x road to +x with a ramp.
+	-- Try to connect +z road to +z with a ramp.
+	-- Try to connect -x-z corner to -x with two ramps.
+	--   If not possible, try -z.
 
-			if road and y <= maxp.y and y >= minp.y then
-				for z1 = -4, 4 do
-					for x1 = -4, 4 do
-						local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
-						if r2 <= 21 then
-							local vi = a:index(x + x1, y, z + z1)
-							if r2 <= 13 and data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
-								if (y > minp.y and data[vi - a.ystride] == node("cityscape:road_white")) or (y < maxp.y and data[vi + a.ystride] == node("cityscape:road_white")) then
-									data[vi] = node("cityscape:road_white")
-								else
-									data[vi] = node("cityscape:road")
-								end
-							end
-							for y1 = 1, maxp.y - y do
-								vi = vi + a.ystride
-								if data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
-									data[vi] = node("air")
-								end
-							end
-						end
-					end
-				end
-
-				local ivm = a:index(x, height, z)
-				data[ivm] = node("cityscape:road_white")
-				write = true
-			end
-
-			-- Try to connect +x road to +x with a ramp.
-			-- Try to connect +z road to +z with a ramp.
-			-- Try to connect -x-z corner to -x with two ramps.
-			--   If not possible, try -z.
-			if city and q_data[qx][qz] and q_data[qx][qz].alt and ((x - minp.x) % 40 < 5 or (z - minp.z) % 40 < 5) then
-				local height = q_data[qx][qz].alt
-				if height > 1 and height <= maxp.y and height >= minp.y then
-					local ivm = a:index(x, height - 20, z)
-					for y = height - 20, math.min(height + 20, maxp.y) do
-						if y < height then
-							data[ivm] = node("default:stone")
-						elseif y == height then
-							data[ivm] = node("cityscape:road")
-						else
-							data[ivm] = node("air")
-						end
-						ivm = ivm + a.ystride
-					end
-				end
-				write = true
-			elseif city and ((x - minp.x) % 40 < 5 or (z - minp.z) % 40 < 5) then
-				local height = -32000
-				if x - minp.x < 5 and z - minp.z < 40 then
-					height = math.max(height, math.floor((ramp_data[2][1][2] - ramp_data[2][1][1]) * (((z - minp.z) % 40) / 40) + ramp_data[2][1][1] + 0.5))
-				end
-				if x - minp.x < 5 and z - minp.z >= 40 then
-					height = math.max(height, math.floor((ramp_data[2][1][3] - ramp_data[2][1][2]) * (((z - minp.z) % 40) / 40) + ramp_data[2][1][2] + 0.5))
-				end
-				if (x - minp.x) >= 40 and (x - minp.x) < 45 and z - minp.z < 40 then
-					height = math.max(height, math.floor((ramp_data[2][2][2] - ramp_data[2][2][1]) * (((z - minp.z) % 40) / 40) + ramp_data[2][2][1] + 0.5))
-				end
-				if (x - minp.x) >= 40 and (x - minp.x) < 45 and z - minp.z >= 40 then
-					height = math.max(height, math.floor((ramp_data[2][2][3] - ramp_data[2][2][2]) * (((z - minp.z) % 40) / 40) + ramp_data[2][2][2] + 0.5))
-				end
-				if z - minp.z < 5 and x - minp.x < 40 then
-					height = math.max(height, math.floor((ramp_data[1][1][2] - ramp_data[1][1][1]) * (((x - minp.x) % 40) / 40) + ramp_data[1][1][1] + 0.5))
-				end
-				if z - minp.z < 5 and x - minp.x >= 40 then
-					height = math.max(height, math.floor((ramp_data[1][1][3] - ramp_data[1][1][2]) * (((x - minp.x) % 40) / 40) + ramp_data[1][1][2] + 0.5))
-				end
-				if (z - minp.z) >= 40 and (z - minp.z) < 45 and x - minp.x < 40 then
-					height = math.max(height, math.floor((ramp_data[1][2][2] - ramp_data[1][2][1]) * (((x - minp.x) % 40) / 40) + ramp_data[1][2][1] + 0.5))
-				end
-				if (z - minp.z) >= 40 and (z - minp.z) < 45 and x - minp.x >= 40 then
-					height = math.max(height, math.floor((ramp_data[1][2][3] - ramp_data[1][2][2]) * (((x - minp.x) % 40) / 40) + ramp_data[1][2][2] + 0.5))
-				end
-
-				if height > 1 and height <= maxp.y and height >= minp.y then
-					local ivm = a:index(x, height, z)
-					data[ivm] = node("cityscape:road")
-					for y = height + 1, math.min(height + 20, maxp.y) do
-						ivm = ivm + a.ystride
-						if data[ivm] ~= node("cityscape:road") then
-							data[ivm] = node("air")
-						end
-					end
-				end
-				write = true
-			end
-
-			i_road = i_road + 1
-			index = index + 1
+	local connect_xpl, connect_xph
+	local ivml = a:index(maxp.x + 1, minp.y, minp.z + 3)
+	local ivmh = a:index(maxp.x + 1, minp.y, minp.z + 43)
+	for y = minp.y, maxp.y do
+		if good_nodes[data[ivml]] then
+			connect_xpl = y
 		end
-		i_road = i_road + 2
+		if good_nodes[data[ivmh]] then
+			connect_xph = y
+		end
+		ivm = ivml + a.ystride
+		ivm = ivmh + a.ystride
 	end
 
-	for qz = 1, 2 do
-		for qx = 1, 2 do
+	local suburb = false
+	local streetw = 5    -- street width
+	local sidewalk = 2   -- sidewalk width
+
+	local plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / (suburb and 2 or 1))
+	local plot_sz_z = math.floor((div_sz_z - streetw - sidewalk * 2) / (suburb and 4 or 1))
+	local rem_x = 0
+	local rem_z = 0
+
+	local p2, p2_ct  -- param2 (rotation) value and count
+	local mm  -- which direction to build houses so they face the street
+
+	local i_road = csize.x + 4
+	local index = 1
+	for qz = 1, mz do
+		for qx = 1, mx do
+			for dz = 0, div_sz_z - 1 do
+				for dx = 0, div_sz_x - 1 do
+					local x = minp.x + ((qx - 1) * div_sz_x) + dx
+					local z = minp.z + ((qz - 1) * div_sz_z) + dz
+					local i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
+					local index = (z - minp.z) * csize.x + (x - minp.x) + 1
+					road_n = road_map[i_road]
+					last_road_nx = road_map[i_road - 1]
+					last_road_nz = road_map[i_road - (csize.x + 2)]
+					local road = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
+					local clear = false
+					--local city = math.abs(road_n) < 10
+					local city = q_data[qx][qz] ~= nil
+					local height = get_height(x, z, heightmap, csize, minp, maxp)
+					local y = math.max(height, 1)
+
+					if road and y <= maxp.y and y >= minp.y then
+						for z1 = -4, 4 do
+							for x1 = -4, 4 do
+								local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
+								if r2 <= 21 then
+									local vi = a:index(x + x1, y, z + z1)
+									if r2 <= 13 and data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
+										if (y > minp.y and data[vi - a.ystride] == node("cityscape:road_white")) or (y < maxp.y and data[vi + a.ystride] == node("cityscape:road_white")) then
+											data[vi] = node("cityscape:road_white")
+										else
+											data[vi] = node("cityscape:road")
+										end
+									end
+									for y1 = 1, maxp.y - y do
+										vi = vi + a.ystride
+										if data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
+											data[vi] = node("air")
+										end
+									end
+								end
+							end
+						end
+
+						local ivm = a:index(x, height, z)
+						data[ivm] = node("cityscape:road_white")
+						write = true
+					end
+
+					if city and q_data[qx][qz] and q_data[qx][qz].alt and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
+						local height = q_data[qx][qz].alt
+						if height > 1 and height <= maxp.y and height >= minp.y then
+							local ivm = a:index(x, height - 20, z)
+							for y = height - 20, math.min(height + 20, maxp.y) do
+								if y < height then
+									data[ivm] = node("default:stone")
+								elseif y == height then
+									data[ivm] = node("cityscape:road")
+								else
+									data[ivm] = node("air")
+								end
+								ivm = ivm + a.ystride
+							end
+						end
+
+						write = true
+					elseif city and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
+						local height = -32000
+						if x - minp.x < 5 and z - minp.z < div_sz_z then
+							height = math.max(height, math.floor((ramp_data[2][1][2] - ramp_data[2][1][1]) * (((z - minp.z) % div_sz_z) / div_sz_z) + ramp_data[2][1][1] + 0.5))
+						end
+						if x - minp.x < 5 and z - minp.z >= div_sz_z then
+							height = math.max(height, math.floor((ramp_data[2][1][3] - ramp_data[2][1][2]) * (((z - minp.z) % div_sz_z) / div_sz_z) + ramp_data[2][1][2] + 0.5))
+						end
+						if (x - minp.x) >= div_sz_x and (x - minp.x) < 45 and z - minp.z < div_sz_z then
+							height = math.max(height, math.floor((ramp_data[2][2][2] - ramp_data[2][2][1]) * (((z - minp.z) % div_sz_z) / div_sz_z) + ramp_data[2][2][1] + 0.5))
+						end
+						if (x - minp.x) >= div_sz_x and (x - minp.x) < 45 and z - minp.z >= div_sz_z then
+							height = math.max(height, math.floor((ramp_data[2][2][3] - ramp_data[2][2][2]) * (((z - minp.z) % div_sz_z) / div_sz_z) + ramp_data[2][2][2] + 0.5))
+						end
+						if z - minp.z < 5 and x - minp.x < div_sz_x then
+							height = math.max(height, math.floor((ramp_data[1][1][2] - ramp_data[1][1][1]) * (((x - minp.x) % div_sz_x) / div_sz_x) + ramp_data[1][1][1] + 0.5))
+						end
+						if z - minp.z < 5 and x - minp.x >= div_sz_x then
+							height = math.max(height, math.floor((ramp_data[1][1][3] - ramp_data[1][1][2]) * (((x - minp.x) % div_sz_x) / div_sz_x) + ramp_data[1][1][2] + 0.5))
+						end
+						if (z - minp.z) >= div_sz_z and (z - minp.z) < 45 and x - minp.x < div_sz_x then
+							height = math.max(height, math.floor((ramp_data[1][2][2] - ramp_data[1][2][1]) * (((x - minp.x) % div_sz_x) / div_sz_x) + ramp_data[1][2][1] + 0.5))
+						end
+						if (z - minp.z) >= div_sz_z and (z - minp.z) < 45 and x - minp.x >= div_sz_x then
+							height = math.max(height, math.floor((ramp_data[1][2][3] - ramp_data[1][2][2]) * (((x - minp.x) % div_sz_x) / div_sz_x) + ramp_data[1][2][2] + 0.5))
+						end
+
+						if height > 1 and height <= maxp.y and height >= minp.y then
+							local ivm = a:index(x, height, z)
+							data[ivm] = node("cityscape:road")
+							for y = height + 1, math.min(height + 20, maxp.y) do
+								ivm = ivm + a.ystride
+								if data[ivm] ~= node("cityscape:road") then
+									data[ivm] = node("air")
+								end
+							end
+						end
+						write = true
+					end
+
+					i_road = i_road + 1
+					index = index + 1
+				end
+				i_road = i_road + 2
+			end
+
 			local height, range
 			if q_data[qx][qz] then
 				height, range = q_data[qx][qz].alt, q_data[qx][qz].range
@@ -394,10 +455,10 @@ function cityscape.generate(minp, maxp, seed)
 
 
 			if height and range and range < 20 and height > 1 and height > minp.y and height <= maxp.y - 20 then
-				for dz = 5, 39 do
-					for dx = 5, 39 do
+				for dz = 5, div_sz_z - 1 do
+					for dx = 5, div_sz_x - 1 do
 						local floor = math.max(minp.y, height - 20)
-						local ivm = a:index(((qx - 1) * 40) + dx + minp.x, floor, ((qz - 1) * 40) + dz + minp.z)
+						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
 							if y == height then
 								data[ivm] = node("cityscape:sidewalk")
@@ -413,29 +474,10 @@ function cityscape.generate(minp, maxp, seed)
 			else
 				q_data[qx][qz] = nil
 			end
-		end
-	end
 
-	local suburb = false
-	local streetw = 5    -- street width
-	local sidewalk = 2   -- sidewalk width
-	-- divide the block into this many buildings
-	local mx, mz, mzs = 2, 2, 2
-
-	local div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
-	local div_sz_z = math.floor(csize.z / mz)
-	local plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / (suburb and 2 or 1))
-	local plot_sz_z = math.floor((div_sz_z - streetw - sidewalk * 2) / (suburb and 4 or 1))
-	local rem_x = 0
-	local rem_z = 0
-
-	local p2, p2_ct  -- param2 (rotation) value and count
-	local mm  -- which direction to build houses so they face the street
-	for sec_x = 1, mx do
-		for sec_z = 1, mz do
 			local alt
-			if q_data[sec_x][sec_z] then
-				alt = q_data[sec_x][sec_z].alt
+			if q_data[qx][qz] then
+				alt = q_data[qx][qz].alt
 			end
 
 			-- checking is done above
@@ -455,7 +497,7 @@ function cityscape.generate(minp, maxp, seed)
 							if mir == 2 then
 								mm = -1
 							end
-							local ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * ix) - 1, alt, minp.z + (sec_z - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + iz - 1)
+							local ivm = a:index(minp.x + (qx + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * ix) - 1, alt, minp.z + (qz - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + iz - 1)
 							for y = 0, (maxp.y - alt + 1) do
 								if plot_buf[ix][y][iz] then
 									data[ivm] = plot_buf[ix][y][iz]
@@ -470,7 +512,7 @@ function cityscape.generate(minp, maxp, seed)
 					if p2_ct > 0 then
 						for i = 1, p2_ct do
 							p2 = p2_buf[i]
-							local ivm = a:index(minp.x + (sec_x + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (sec_z - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + p2[3] - 1)
+							local ivm = a:index(minp.x + (qx + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (qz - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + p2[3] - 1)
 							p2data[ivm] = p2[4]
 						end
 					end
