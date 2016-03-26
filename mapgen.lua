@@ -6,6 +6,7 @@ local mx, mz = 2, 2
 local streetw = 5    -- street width
 local sidewalk = 2   -- sidewalk width
 local river_size = 5 / 100
+local beach_level = 5
 
 local good_nodes, grassy = {}, {}
 do
@@ -31,7 +32,7 @@ do
 end
 
 -- Read the noise parameters from the actual mapgen.
-local function get_cpp_setting_noise(name, default)
+function cityscape.get_cpp_setting_noise(name, default)
 	local noise
 	local n = minetest.setting_get(name)
 
@@ -52,108 +53,16 @@ local function get_cpp_setting_noise(name, default)
 
 	return noise
 end
+local get_cpp_setting_noise = cityscape.get_cpp_setting_noise
 
-local noises = {
-	{offset = -10, scale = 50, seed = 5202, spread = {x = 1024, y = 1024, z = 1024}, octaves = 6, persist = 0.4, lacunarity = 2},
-	{offset = 0, scale = 1, seed = -6050, spread = {x = 256, y = 256, z = 256}, octaves = 5, persist = 0.6, lacunarity = 2},
-	{offset = 5, scale = 4, seed = -1914, spread = {x = 512, y = 512, z = 512}, octaves = 1, persist = 1, lacunarity = 2},
-	{offset = 0.6, scale = 0.5, seed = 777, spread = {x = 512, y = 512, z = 512}, octaves = 1, persist = 1, lacunarity = 2},
-	{offset = 0.5, scale = 0.5, seed = 746, spread = {x = 128, y = 128, z = 128}, octaves = 1, persist = 1, lacunarity = 2},
-	{offset = 0, scale = 1, seed = 1993, spread = {x = 256, y = 512, z = 256}, octaves = 6, persist = 0.8, lacunarity = 2},
-}
-
-noises[1] = get_cpp_setting_noise("mg_valleys_np_terrain_height", noises[1])
-noises[2] = get_cpp_setting_noise("mg_valleys_np_rivers", noises[2])
-noises[3] = get_cpp_setting_noise("mg_valleys_np_valley_depth", noises[3])
-noises[4] = get_cpp_setting_noise("mg_valleys_np_valley_profile", noises[4])
-noises[5] = get_cpp_setting_noise("mg_valleys_np_inter_valley_slope", noises[5])
-noises[6] = get_cpp_setting_noise("mg_valleys_np_inter_valley_fill", noises[6])
-noises[7] = table.copy(noises[1])
---noises[7].scale = 1
---noises[7].offset = -0.2
-noises[7].octaves = noises[6].octaves - 1
---noises[7].persist = noises[6].persist - 0.1
-
-local function get_noise(pos, i)
-	local noise = minetest.get_perlin(noises[i])
-	if i == 6 then
-		return noise:get3d(pos)
-	else
-		return noise:get2d({x=pos.x, y=pos.z})
-	end
-end
-
-local river_size = 5 / 100
-
-local function get_elevation(pos)
-	local v1 = get_noise(pos, 1) -- base ground
-	local v2 = math.abs(get_noise(pos, 2)) - river_size -- valleys
-	local v3 = get_noise(pos, 3) ^ 2 -- valleys depth
-	local base_ground = v1 + v3
-	if v2 < 0 then -- river
-		return math.ceil(base_ground), true, math.ceil(base_ground)
-	end
-	local v4 = get_noise(pos, 4) -- valleys profile
-	local v5 = get_noise(pos, 5) -- inter-valleys slopes
-	-- Same calculation than in cityscape.generate
-	local base_ground = v1 + v3
-	local valleys = v3 * (1 - math.exp(- (v2 / v4) ^ 2))
-	local mountain_ground = base_ground + valleys
-	local pos = {x=pos.x, y=math.floor(mountain_ground + 0.5), z=pos.z} -- For now we don't know the elevation. We will test some y values. Set the position to montain_ground which is the most probable value.
-	local slopes = v5 * valleys
-	if get_noise(pos, 6) * slopes > pos.y - mountain_ground then -- Position is in the ground, so look for air higher
-		pos.y = pos.y + 1
-		while get_noise(pos, 6) * slopes > pos.y - mountain_ground do
-			pos.y = pos.y + 1
-		end -- End of the loop when there is air
-		return pos.y, false, mountain_ground -- Return position of the first air node, and false because that's not a river
-	else -- Position is not in the ground, so look for dirt lower
-		pos.y = pos.y - 1
-		while get_noise(pos, 6) * slopes <= pos.y - mountain_ground do
-			pos.y = pos.y - 1
-		end -- End of the loop when there is dirt (or any ground)
-		pos.y = pos.y + 1 -- We have the latest dirt node and we want the first air node that is just above
-		return pos.y, false, mountain_ground -- Return position of the first air node, and false because that's not a river
-	end
-end
-
-local function on_route(a, b, c, approx)
-	if a.z == c.z then
-		return math.abs(b.z - a.z) < approx
-	end
-
-	local k = (a.x - c.x) / (a.z - c.z)
-	local x = a.x - (k * (a.z - b.z))
-	return math.abs(x - b.x) < approx
-end
-
-local function dist(a, b)
-	return math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
-end
-
-local function xon_route(a, b, c)
-	local approx = 1
-	local dist_a_b = dist(a, b)
-	local dist_a_c = dist(a, c)
-
-	if dist_a_b + dist(b, c) <= dist_a_c + approx and dist_a_b < dist_a_c then
-		return true
-	end
-
-	return false
-end
-
-local function x_comp(a, b)
-	return a.x < b.x
-end
-
-local function z_comp(a, b)
-	return a.z < b.z
-end
+dofile(cityscape.path .. "/valleys.lua")
+local noises = cityscape.noises
+local get_elevation = cityscape.get_elevation
 
 local plot_buf = {}  -- passed to functions to build houses/buildings in
 local p2_buf = {}  -- passed to functions to store rotation data
 local p2data = {}  -- vm rotation data buffer
+local schem_data = {}
 
 
 local function clear_bd(plot_buf, plot_sz_x, dy, plot_sz_z)
@@ -252,11 +161,28 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	local anchor_z = get_elevation({x = (qx - 1) * div_sz_x + minp.x, z = qz * div_sz_z + minp.z})
 
 	local range = (math.max(math.abs(anchor - anchor_x), math.abs(anchor - anchor_z)))
-	if road_p or range > max_alt_range or anchor <= 3 or anchor < minp.y or anchor > maxp.y - 20 then
+	if road_p or range > max_alt_range or anchor <= beach_level or anchor < minp.y or anchor > maxp.y - 20 then
 		city_p = false
 	end
 
 	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road}
+end
+
+local function place_schematic(a, data, pos, schem)
+	pos.x = pos.x - math.floor(schem.size.x / 2)
+	pos.z = pos.z - math.floor(schem.size.z / 2)
+	for z = 0, schem.size.z - 1 do
+		for y = 0, schem.size.y - 1 do
+			for x = 0, schem.size.x - 1 do
+				local ivm = a:index(pos.x + x, pos.y + y, pos.z + z)
+				local isch = z * schem.size.y * schem.size.x + y * schem.size.x + x + 1
+				local prob = schem.data[isch].prob or schem.data[isch].param1 or 255
+				if prob >= math.random(255) then
+					data[ivm] = node(schem.data[isch].name)
+				end
+			end
+		end
+	end
 end
 
 
@@ -377,7 +303,7 @@ function cityscape.generate(minp, maxp, seed)
 							height = height + d
 						end
 
-						if height > 3 and height <= maxp.y and height >= minp.y then
+						if height > beach_level and height <= maxp.y and height >= minp.y then
 							local floor = math.min(q_data.alt, q_data.ramp_x, q_data.ramp_z)
 							floor = math.max(floor, minp.y - 15)
 							floor = minp.y - 15
@@ -405,7 +331,7 @@ function cityscape.generate(minp, maxp, seed)
 							height = math.max(height, math.floor((q_data.ramp_x - q_data.alt) * dx / div_sz_x + q_data.alt + 0.5))
 						end
 
-						if height > 3 and height <= maxp.y and height >= minp.y then
+						if height > beach_level and height <= maxp.y and height >= minp.y then
 							local ivm = a:index(x, height, z)
 							data[ivm] = node(breaker("cityscape:road"))
 							for y = height + 1, math.min(height + 20, maxp.y) do
@@ -415,6 +341,7 @@ function cityscape.generate(minp, maxp, seed)
 								end
 							end
 						end
+
 						write = true
 					end
 
@@ -448,12 +375,8 @@ function cityscape.generate(minp, maxp, seed)
 				end
 			end
 
-			local alt
-			if q_data then
-				alt = q_data.alt
-			end
-
 			if q_data.city then
+				local alt = q_data.alt
 				for mir = 1, (suburb and 2 or 1) do
 					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
 
@@ -487,6 +410,21 @@ function cityscape.generate(minp, maxp, seed)
 							local ivm = a:index(minp.x + (qx + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (qz - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + p2[3] - 1)
 							p2data[ivm] = p2[4]
 						end
+					end
+				end
+			elseif not q_data.road then
+				for i = 1, math.random(64) do
+					local dx, dz = math.random(3, 36), math.random(3, 36)
+					local x = minp.x + ((qx - 1) * div_sz_x) + dx
+					local z = minp.z + ((qz - 1) * div_sz_z) + dz
+					local y = get_height(x, z, heightmap, csize, minp, maxp)
+					if y >= minp.y and y <= maxp.y then
+						local schem = cityscape.schematics.deciduous_trees[math.random(#cityscape.schematics.deciduous_trees)]
+						local pos = {x=x, y=y, z=z}
+						-- This is bull****. These schematic functions do not work.
+						-- Place them programmatically since the lua is ****ed.
+						place_schematic(a, data, pos, schem)
+						write = true
 					end
 				end
 			end

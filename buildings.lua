@@ -208,7 +208,7 @@ local function gotham(data, param, dx, dy, dz)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, conc)
+		roof_box(data, 10, floors * 4, dx, dz, conc)
 	end
 end
 
@@ -268,7 +268,7 @@ local function glass_and_steel(data, param, dx, dy, dz)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, conc)
+		roof_box(data, 10, floors * 4, dx, dz, conc)
 	end
 end
 
@@ -342,7 +342,7 @@ local function simple(data, param, dx, dy, dz, slit)
 	end
 
 	if ra == 0 then
-		roof_box(data, 6, floors * 4, dx, dz, conc)
+		roof_box(data, 10, floors * 4, dx, dz, conc)
 	end
 end
 

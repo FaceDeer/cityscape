@@ -2,6 +2,8 @@ The molotov.lua code is derived from more_fire (https://github.com/NathanSalapat
 
 The non-laggy car code in nodes.lua is based on cheapie's non-laggy car mod (https://github.com/cheapie/cars/blob/master/README), distributed as WTFPL.
 
+The code in valleys.lua is based on Gael De Sally's Valleys Mapgen, and is distributed under the GPL3 license: http://www.gnu.org/licenses/gpl.html
+
 
 All other code is CC0:
 
