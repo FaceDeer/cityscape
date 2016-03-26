@@ -1,9 +1,11 @@
 local node = cityscape.node
+local breaker = cityscape.breaker
 
 local max_alt_range = 10
 local mx, mz = 2, 2
 local streetw = 5    -- street width
 local sidewalk = 2   -- sidewalk width
+local river_size = 5 / 100
 
 local good_nodes, grassy = {}, {}
 do
@@ -19,12 +21,12 @@ do
 	"cityscape:floor_ceiling_broken", "cityscape:road", "cityscape:road_broken",
 	"cityscape:road_yellow_line", "cityscape:plate_glass", }
 	for _, i in pairs(t) do
-		good_nodes[node(i)] = true
+		good_nodes[node(breaker(i))] = true
 	end
 
 	t = { "cityscape:concrete_broken", "cityscape:sidewalk_broken", }
 	for _, i in pairs(t) do
-		grassy[node(i)] = true
+		grassy[node(breaker(i))] = true
 	end
 end
 
@@ -286,6 +288,7 @@ function cityscape.generate(minp, maxp, seed)
 	math.randomseed(seed_noise:get2d({x=minp.x, y=minp.z}))
 
 	local road_map = minetest.get_perlin_map(noises[7], {x=csize.x + 2, y=csize.z + 2}):get2dMap_flat({x=minp.x - 1, y=minp.z - 1})
+	local rivers = minetest.get_perlin_map(noises[2], {x=csize.x, y=csize.z}):get2dMap_flat({x=minp.x, y=minp.z})
 	local road_n
 	local last_road_nx
 	local last_road_nz
@@ -319,6 +322,9 @@ function cityscape.generate(minp, maxp, seed)
 					local clear = false
 					local city = q_data.city
 					local height = get_height(x, z, heightmap, csize, minp, maxp)
+					if math.abs(rivers[index]) < river_size then
+						height = get_elevation({x=x, z=z})
+					end
 					local y = math.max(height, 1)
 
 					if highway and y <= maxp.y and y >= minp.y then
@@ -327,16 +333,16 @@ function cityscape.generate(minp, maxp, seed)
 								local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
 								if r2 <= 21 then
 									local vi = a:index(x + x1, y, z + z1)
-									if r2 <= 13 and data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
-										if (y > minp.y and data[vi - a.ystride] == node("cityscape:road_white")) or (y < maxp.y and data[vi + a.ystride] == node("cityscape:road_white")) then
-											data[vi] = node("cityscape:road_white")
+									if r2 <= 13 and data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
+										if (y > minp.y and data[vi - a.ystride] == node(breaker("cityscape:road_white"))) or (y < maxp.y and data[vi + a.ystride] == node(breaker("cityscape:road_white"))) then
+											data[vi] = node(breaker("cityscape:road_white"))
 										else
-											data[vi] = node("cityscape:road")
+											data[vi] = node(breaker("cityscape:road"))
 										end
 									end
 									for y1 = 1, maxp.y - y do
 										vi = vi + a.ystride
-										if data[vi] ~= node("cityscape:road") and data[vi] ~= node("cityscape:road_white") then
+										if data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
 											data[vi] = node("air")
 										end
 									end
@@ -345,7 +351,7 @@ function cityscape.generate(minp, maxp, seed)
 						end
 
 						local ivm = a:index(x, height, z)
-						data[ivm] = node("cityscape:road_white")
+						data[ivm] = node(breaker("cityscape:road_white"))
 						write = true
 					end
 
@@ -380,7 +386,7 @@ function cityscape.generate(minp, maxp, seed)
 								if y < height then
 									data[ivm] = node("default:stone")
 								elseif y == height then
-									data[ivm] = node("cityscape:road")
+									data[ivm] = node(breaker("cityscape:road"))
 								else
 									data[ivm] = node("air")
 								end
@@ -401,10 +407,10 @@ function cityscape.generate(minp, maxp, seed)
 
 						if height > 3 and height <= maxp.y and height >= minp.y then
 							local ivm = a:index(x, height, z)
-							data[ivm] = node("cityscape:road")
+							data[ivm] = node(breaker("cityscape:road"))
 							for y = height + 1, math.min(height + 20, maxp.y) do
 								ivm = ivm + a.ystride
-								if data[ivm] ~= node("cityscape:road") then
+								if data[ivm] ~= node(breaker("cityscape:road")) then
 									data[ivm] = node("air")
 								end
 							end
@@ -430,7 +436,7 @@ function cityscape.generate(minp, maxp, seed)
 						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
 							if y == height then
-								data[ivm] = node("cityscape:sidewalk")
+								data[ivm] = node(breaker("cityscape:sidewalk"))
 							elseif y < height then
 								data[ivm] = node("default:stone")
 							else
