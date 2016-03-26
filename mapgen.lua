@@ -190,9 +190,15 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	local div_sz_z = math.floor(csize.z / mz)
 	local i_road = csize.x + 4
 	local avg = 0
+	local avg_c = 0
 	local min = 31000
 	local max = -31000
 	local city = 0
+	local road_p = false
+	-- You can check for road by checking the noise sign at each corner.
+	-- If any are different, there's a road.
+	-- However, two parallel roads through the middle would defeat that.
+	-- Checking the middle of each side as well would reduce the odds a lot.
 	for z = minp.z + ((qz - 1) * div_sz_z), minp.z + (qz * div_sz_z) do
 		for x = minp.x + ((qx - 1) * div_sz_x), minp.x + (qx * div_sz_x) do
 			i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
@@ -201,10 +207,9 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 			local last_road_nx = road_map[i_road - 1]
 			local last_road_nz = road_map[i_road - (csize.x + 2)]
 
-			local road = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
-			if road then
-				--print("("..minp.x..","..minp.z.."): road is true")
-				return nil
+			local highway = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
+			if highway then
+				road_p = true
 			end
 
 			if math.abs(road_n) < 10 then
@@ -214,10 +219,10 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 			local height = get_height(x, z, heightmap, csize, minp, maxp)
 
 			if height > maxp.y or height < minp.y then
-				--print("("..minp.x..","..minp.z.."): surface is out of bounds")
-				return nil
+				-- nop
 			else
 				avg = avg + height
+				avg_c = avg_c + 1
 				if max < height then
 					max = height
 				end
@@ -229,13 +234,23 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	end
 
 	city = city / div_sz_x / div_sz_z
-	if city < 0.5 then
-		--print("("..minp.x..","..minp.z.."): not enough city")
-		return nil
-	end
-	avg = math.floor(avg / div_sz_x / div_sz_z + 0.5)
+	local city_p = city > 0.5
 
-	return avg, (max - min)
+	if avg_c > 0 then
+		avg = math.floor(avg / avg_c + 0.5)
+	end
+
+	local anchor = get_elevation({x = (qx - 1) * div_sz_x + minp.x, z = (qz - 1) * div_sz_z + minp.z})
+	local anchor_x = get_elevation({x = qx * div_sz_x + minp.x, z = (qz - 1) * div_sz_z + minp.z})
+	local anchor_z = get_elevation({x = (qx - 1) * div_sz_x + minp.x, z = qz * div_sz_z + minp.z})
+
+	local range = (math.max(math.abs(anchor - anchor_x), math.abs(anchor - anchor_z)))
+	if road_p or range > 20 or anchor <= 1 or anchor < minp.y or anchor > maxp.y - 20 then
+		city_p = false
+	end
+	local side_road = city > 0
+
+	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road}
 end
 
 
@@ -277,7 +292,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	for qz = 1, mz do
 		for qx = 1, mx do
-			q_data[qx][qz].alt, q_data[qx][qz].range = get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
+			q_data[qx][qz] = get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 		end
 	end
 
@@ -294,24 +309,8 @@ function cityscape.generate(minp, maxp, seed)
 	ramp_data[2][2][2] = get_height(minp.x + 43, minp.z + 41, heightmap, csize, minp, maxp)
 	ramp_data[2][2][3] = get_height(minp.x + 43, maxp.z, heightmap, csize, minp, maxp)
 
-	-- Try to connect +x road to +x with a ramp.
-	-- Try to connect +z road to +z with a ramp.
-	-- Try to connect -x-z corner to -x with two ramps.
-	--   If not possible, try -z.
-
-	local connect_xpl, connect_xph
-	local ivml = a:index(maxp.x + 1, minp.y, minp.z + 3)
-	local ivmh = a:index(maxp.x + 1, minp.y, minp.z + 43)
-	for y = minp.y, maxp.y do
-		if good_nodes[data[ivml]] then
-			connect_xpl = y
-		end
-		if good_nodes[data[ivmh]] then
-			connect_xph = y
-		end
-		ivm = ivml + a.ystride
-		ivm = ivmh + a.ystride
-	end
+	-- level = get_elevation at (0,0)
+	-- ramp to +x (0,0) and +z (0,0)
 
 	local suburb = false
 	local streetw = 5    -- street width
@@ -338,14 +337,14 @@ function cityscape.generate(minp, maxp, seed)
 					road_n = road_map[i_road]
 					last_road_nx = road_map[i_road - 1]
 					last_road_nz = road_map[i_road - (csize.x + 2)]
-					local road = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
+					local highway = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
 					local clear = false
 					--local city = math.abs(road_n) < 10
-					local city = q_data[qx][qz] ~= nil
+					local city = q_data[qx][qz].city
 					local height = get_height(x, z, heightmap, csize, minp, maxp)
 					local y = math.max(height, 1)
 
-					if road and y <= maxp.y and y >= minp.y then
+					if highway and y <= maxp.y and y >= minp.y then
 						for z1 = -4, 4 do
 							for x1 = -4, 4 do
 								local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
@@ -373,11 +372,12 @@ function cityscape.generate(minp, maxp, seed)
 						write = true
 					end
 
-					if city and q_data[qx][qz] and q_data[qx][qz].alt and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
+					if q_data[qx][qz].city and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
 						local height = q_data[qx][qz].alt
-						if height > 1 and height <= maxp.y and height >= minp.y then
-							local ivm = a:index(x, height - 20, z)
-							for y = height - 20, math.min(height + 20, maxp.y) do
+						if height > 3 and height <= maxp.y and height >= minp.y then
+							local floor = math.max(q_data[qx][qz].min, minp.y - 15)
+							local ivm = a:index(x, floor, z)
+							for y = floor, math.min(height + 20, maxp.y) do
 								if y < height then
 									data[ivm] = node("default:stone")
 								elseif y == height then
@@ -390,7 +390,7 @@ function cityscape.generate(minp, maxp, seed)
 						end
 
 						write = true
-					elseif city and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
+					elseif q_data[qx][qz].road and ((x - minp.x) % div_sz_x < 5 or (z - minp.z) % div_sz_z < 5) then
 						local height = -32000
 						if x - minp.x < 5 and z - minp.z < div_sz_z then
 							height = math.max(height, math.floor((ramp_data[2][1][2] - ramp_data[2][1][1]) * (((z - minp.z) % div_sz_z) / div_sz_z) + ramp_data[2][1][1] + 0.5))
@@ -417,7 +417,7 @@ function cityscape.generate(minp, maxp, seed)
 							height = math.max(height, math.floor((ramp_data[1][2][3] - ramp_data[1][2][2]) * (((x - minp.x) % div_sz_x) / div_sz_x) + ramp_data[1][2][2] + 0.5))
 						end
 
-						if height > 1 and height <= maxp.y and height >= minp.y then
+						if height > 3 and height <= maxp.y and height >= minp.y then
 							local ivm = a:index(x, height, z)
 							data[ivm] = node("cityscape:road")
 							for y = height + 1, math.min(height + 20, maxp.y) do
@@ -454,7 +454,7 @@ function cityscape.generate(minp, maxp, seed)
 			end
 
 
-			if height and range and range < 20 and height > 1 and height > minp.y and height <= maxp.y - 20 then
+			if q_data[qx][qz].city then
 				for dz = 5, div_sz_z - 1 do
 					for dx = 5, div_sz_x - 1 do
 						local floor = math.max(minp.y, height - 20)
@@ -471,8 +471,6 @@ function cityscape.generate(minp, maxp, seed)
 						end
 					end
 				end
-			else
-				q_data[qx][qz] = nil
 			end
 
 			local alt
@@ -480,8 +478,7 @@ function cityscape.generate(minp, maxp, seed)
 				alt = q_data[qx][qz].alt
 			end
 
-			-- checking is done above
-			if alt then
+			if q_data[qx][qz].city then
 				for mir = 1, (suburb and 2 or 1) do
 					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
 
