@@ -1,3 +1,13 @@
+-- Check for necessary mod functions and abort if they aren't available.
+if not minetest.get_biome_id then
+	minetest.log()
+	minetest.log("* Not loading Cityscape *")
+	minetest.log("Cityscape requires mod functions which are")
+	minetest.log(" not exposed by your Minetest build.")
+	minetest.log()
+	return
+end
+
 cityscape = {}
 cityscape.version = "1.0"
 cityscape.path = minetest.get_modpath(minetest.get_current_modname())

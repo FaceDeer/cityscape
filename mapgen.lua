@@ -169,21 +169,49 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 end
 
 local function place_schematic(a, data, pos, schem)
+	local yslice = {}
+	if schem.yslice_prob then
+		for _, ys in pairs(schem.yslice_prob) do
+			yslice[ys.ypos] = ys.prob
+		end
+	end
+
 	pos.x = pos.x - math.floor(schem.size.x / 2)
 	pos.z = pos.z - math.floor(schem.size.z / 2)
+
 	for z = 0, schem.size.z - 1 do
-		for y = 0, schem.size.y - 1 do
-			for x = 0, schem.size.x - 1 do
-				local ivm = a:index(pos.x + x, pos.y + y, pos.z + z)
-				local isch = z * schem.size.y * schem.size.x + y * schem.size.x + x + 1
-				local prob = schem.data[isch].prob or schem.data[isch].param1 or 255
-				if prob >= math.random(255) then
-					data[ivm] = node(schem.data[isch].name)
+		for x = 0, schem.size.x - 1 do
+			local ivm = a:index(pos.x + x, pos.y, pos.z + z)
+			local isch = z * schem.size.y * schem.size.x + x + 1
+			for y = 0, schem.size.y - 1 do
+				if yslice[y] or 255 >= math.random(255) then
+					local prob = schem.data[isch].prob or schem.data[isch].param1 or 255
+					if prob >= math.random(255) then
+						data[ivm] = node(schem.data[isch].name)
+					end
 				end
+				ivm = ivm + a.ystride
+				isch = isch + schem.size.x
 			end
 		end
 	end
 end
+
+
+-- Create a table of biome ids, so I can use the biomemap.
+if not cityscape.biome_ids then
+	local i
+	cityscape.biome_ids = {}
+	for name, desc in pairs(minetest.registered_biomes) do
+		i = minetest.get_biome_id(desc.name)
+		cityscape.biome_ids[i] = desc.name
+	end
+end
+
+local tree_biomes = {}
+tree_biomes["deciduous_forest"] = {"deciduous_trees"}
+tree_biomes["coniferous_forest"] = {"conifer_trees"}
+tree_biomes["rainforest"] = {"jungle_trees"}
 
 
 function cityscape.generate(minp, maxp, seed)
@@ -193,6 +221,7 @@ function cityscape.generate(minp, maxp, seed)
 	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
 	local csize = vector.add(vector.subtract(maxp, minp), 1)
 	local heightmap = minetest.get_mapgen_object("heightmap")
+	local biomemap = minetest.get_mapgen_object("biomemap")
 
 	-- divide the block into this many buildings
 	local div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
@@ -413,20 +442,32 @@ function cityscape.generate(minp, maxp, seed)
 					end
 				end
 			elseif not q_data.road then
-				for i = 1, math.random(64) do
-					local dx, dz = math.random(3, 36), math.random(3, 36)
-					local x = minp.x + ((qx - 1) * div_sz_x) + dx
-					local z = minp.z + ((qz - 1) * div_sz_z) + dz
-					local y = get_height(x, z, heightmap, csize, minp, maxp)
-					if y >= minp.y and y <= maxp.y then
-						local schem = cityscape.schematics.deciduous_trees[math.random(#cityscape.schematics.deciduous_trees)]
-						local pos = {x=x, y=y, z=z}
-						-- This is bull****. These schematic functions do not work.
-						-- Place them programmatically since the lua is ****ed.
-						place_schematic(a, data, pos, schem)
-						write = true
+				local sx = minp.x + ((qx - 1) * div_sz_x) - 1
+				local sz = minp.z + ((qz - 1) * div_sz_z) - 1
+				for dz = 0, 35, 5 do
+					for dx = 0, 35, 5 do
+						if math.random(2) == 1 then
+							local x = sx + dx + math.random(5)
+							local z = sz + dz + math.random(5)
+							local y = get_height(x, z, heightmap, csize, minp, maxp)
+							local ivm = a:index(x, y, z)
+							if data[ivm + a.ystride] == node("air") and (data[ivm] == node("default:dirt") or data[ivm] == node("default:dirt_with_grass") or data[ivm] == node("default:dirt_with_snow")) then
+								local index_2d = dz * csize.x + dx + 1
+								local biome = cityscape.biome_ids[biomemap[index_2d]]
+								if tree_biomes[biome] and y >= minp.y and y <= maxp.y then
+									local tree_type = tree_biomes[biome][math.random(#tree_biomes[biome])]
+									local schem = cityscape.schematics[tree_type][math.random(#cityscape.schematics[tree_type])]
+									local pos = {x=x, y=y, z=z}
+									-- This is bull****. The schematic functions do not work.
+									-- Place them programmatically since the lua api is ****ed.
+									place_schematic(a, data, pos, schem)
+								end
+							end
+						end
 					end
 				end
+
+				write = true
 			end
 		end
 	end
