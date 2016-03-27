@@ -469,6 +469,47 @@ function cityscape.generate(minp, maxp, seed)
 
 				write = true
 			end
+			if q_data.city or q_data.road then
+				for y = maxp.y, minp.y, -1 do
+					for dz = 0, div_sz_z - 1 do
+						for dx = 0, div_sz_x - 1 do
+							local x = minp.x + ((qx - 1) * div_sz_x) + dx
+							local z = minp.z + ((qz - 1) * div_sz_z) + dz
+							--local index = (z - minp.z) * csize.x + (x - minp.x) + 1
+							local ivm = a:index(x, y, z)
+							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_white") then
+								local sc = 0
+								for sz = -1, 1 do
+									for sx = -1, 1 do
+										if sx ~= sz and (sx == 0 or sz == 0) then
+											local nivm = ivm + sz * a.zstride + sx
+											if (data[nivm - a.ystride] == node("cityscape:road") or data[nivm - a.ystride] == node("cityscape:road_white")) and data[nivm] == node("air") then
+												sc = sc + 1
+												if sc > 1 then
+													data[ivm] = node("stairs:slab_road")
+												else
+													data[ivm] = node("stairs:stair_road")
+													if sx == -1 then
+														p2data[ivm] = 1
+													elseif sx == 1 then
+														p2data[ivm] = 3
+													elseif sz == -1 then
+														p2data[ivm] = 0
+													elseif sz == 1 then
+														p2data[ivm] = 4
+													end
+												end
+											end
+										end
+									end
+								end
+							end
+
+							--ivm = ivm - a.ystride
+						end
+					end
+				end
+			end
 		end
 	end
 
