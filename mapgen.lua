@@ -307,9 +307,9 @@ function cityscape.generate(minp, maxp, seed)
 							data[ivm] = node(breaker("cityscape:road_white"))
 							write = true
 						end
-					elseif q_data.city and (dx < 5 or dz < 5) then
+					elseif q_data.city and (dx < streetw or dz < streetw) then
 						local height = q_data.alt
-						if dx < 5 then
+						if dx < streetw then
 							local d = q_data.ramp_z - q_data.alt
 							local idz = div_sz_z - dz - 1
 							if d < 0 then
@@ -318,7 +318,7 @@ function cityscape.generate(minp, maxp, seed)
 								d = math.max(d - idz, 0)
 							end
 							height = height + d
-						elseif dz < 5 then
+						elseif dz < streetw then
 							local d = q_data.ramp_x - q_data.alt
 							local idx = div_sz_x - dx - 1
 							if d < 0 then
@@ -330,6 +330,9 @@ function cityscape.generate(minp, maxp, seed)
 						end
 
 						if height > beach_level and height <= maxp.y and height >= minp.y then
+							local street_center_x = (dx == math.floor(streetw / 2) and dz % 2 == 0) and not (dx < streetw and dz < streetw)
+							local street_center_z = (dz == math.floor(streetw / 2) and dx % 2 == 0) and not (dz < streetw and dx < streetw)
+
 							local floor = math.min(q_data.alt, q_data.ramp_x, q_data.ramp_z)
 							floor = math.max(floor, minp.y - 15)
 							floor = minp.y - 15
@@ -337,6 +340,11 @@ function cityscape.generate(minp, maxp, seed)
 							for y = floor, math.min(height + 20, maxp.y) do
 								if y < height then
 									data[ivm] = node("default:stone")
+								elseif y == height and height == q_data.alt and street_center_x then
+									data[ivm] = node(breaker("cityscape:road_yellow_line"))
+								elseif y == height and height == q_data.alt and street_center_z then
+									data[ivm] = node(breaker("cityscape:road_yellow_line"))
+									p2data[ivm] = 21
 								elseif y == height then
 									data[ivm] = node(breaker("cityscape:road"))
 								else
@@ -347,19 +355,30 @@ function cityscape.generate(minp, maxp, seed)
 						end
 
 						write = true
-					elseif q_data.road and (dx < 5 or dz < 5) then
+					elseif q_data.road and (dx < streetw or dz < streetw) then
 						local height = -32000
 
-						if dx < 5 then
+						if dx < streetw then
 							height = math.max(height, math.floor((q_data.ramp_z - q_data.alt) * dz / div_sz_z + q_data.alt + 0.5))
 						end
-						if dz < 5 then
+						if dz < streetw then
 							height = math.max(height, math.floor((q_data.ramp_x - q_data.alt) * dx / div_sz_x + q_data.alt + 0.5))
 						end
 
 						if height > beach_level and height <= maxp.y and height >= minp.y then
+							local street_center_x = (dx == math.floor(streetw / 2) and dz % 2 == 0) and not (dx < streetw and dz < streetw)
+							local street_center_z = (dz == math.floor(streetw / 2) and dx % 2 == 0) and not (dz < streetw and dx < streetw)
+
 							local ivm = a:index(x, height, z)
-							data[ivm] = node(breaker("cityscape:road"))
+							if street_center_x then
+								data[ivm] = node(breaker("cityscape:road_yellow_line"))
+							elseif street_center_z then
+								data[ivm] = node(breaker("cityscape:road_yellow_line"))
+								p2data[ivm] = 21
+							else
+								data[ivm] = node(breaker("cityscape:road"))
+							end
+
 							for y = height + 1, math.min(height + 20, maxp.y) do
 								ivm = ivm + a.ystride
 								if data[ivm] ~= node(breaker("cityscape:road")) then
@@ -383,8 +402,8 @@ function cityscape.generate(minp, maxp, seed)
 			end
 
 			if q_data.city then
-				for dz = 5, div_sz_z - 1 do
-					for dx = 5, div_sz_x - 1 do
+				for dz = streetw, div_sz_z - 1 do
+					for dx = streetw, div_sz_x - 1 do
 						local floor = math.max(minp.y, height - 20)
 						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
@@ -473,13 +492,13 @@ function cityscape.generate(minp, maxp, seed)
 							local x = minp.x + ((qx - 1) * div_sz_x) + dx
 							local z = minp.z + ((qz - 1) * div_sz_z) + dz
 							local ivm = a:index(x, y, z)
-							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_white") then
+							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_white") or data[ivm] == node("cityscape:road_yellow_line") then
 								local sc = 0
 								for sz = -1, 1 do
 									for sx = -1, 1 do
 										if sx ~= sz and (sx == 0 or sz == 0) then
 											local nivm = ivm + sz * a.zstride + sx
-											if (data[nivm - a.ystride] == node("cityscape:road") or data[nivm - a.ystride] == node("cityscape:road_white")) and data[nivm] == node("air") then
+											if (data[nivm - a.ystride] == node("cityscape:road") or data[nivm - a.ystride] == node("cityscape:road_white") or data[nivm - a.ystride] == node("cityscape:road_yellow_line")) and data[nivm] == node("air") then
 												sc = sc + 1
 												if sc > 1 then
 													data[ivm] = node("stairs:slab_road")
