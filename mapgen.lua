@@ -81,16 +81,12 @@ local function clear_bd(plot_buf, plot_sz_x, dy, plot_sz_z)
 	end
 end
 
-local function height_index(x, z, csize)
-	return (z - 1) * csize.x + (x - 1) + 1
-end
-
 local function get_height(x, z, heightmap, csize, minp, maxp)
 	local h
 	if x > maxp.x or x < minp.x or z > maxp.z or z < minp.z then
 		h = get_elevation({x=x, z=z})
 	else
-		h = heightmap[height_index(x - minp.x + 1, z - minp.z + 1, csize)]
+		h = heightmap[(z - minp.z) * csize.x + (x - minp.x) + 1]
 
 		if not h or h >= maxp.y or h <= minp.y then
 			h = get_elevation({x=x, z=z})
@@ -282,36 +278,36 @@ function cityscape.generate(minp, maxp, seed)
 						height = get_elevation({x=x, z=z})
 					end
 					local y = math.max(height, 1)
-					if highway and y <= maxp.y and y >= minp.y then
-						for z1 = -4, 4 do
-							for x1 = -4, 4 do
-								local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
-								if r2 <= 21 then
-									local vi = a:index(x + x1, y, z + z1)
-									if r2 <= 13 and data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
-										-- change '== node(breaker('
-										if (y > minp.y and data[vi - a.ystride] == node(breaker("cityscape:road_white"))) or (y < maxp.y and data[vi + a.ystride] == node(breaker("cityscape:road_white"))) then
-											data[vi] = node(breaker("cityscape:road_white"))
-										else
-											data[vi] = node(breaker("cityscape:road"))
+					if highway then
+						if y <= maxp.y and y >= minp.y then
+							for z1 = -4, 4 do
+								for x1 = -4, 4 do
+									local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
+									if r2 <= 21 then
+										local vi = a:index(x + x1, y, z + z1)
+										if r2 <= 13 and data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
+											-- change '== node(breaker('
+											if (y > minp.y and data[vi - a.ystride] == node(breaker("cityscape:road_white"))) or (y < maxp.y and data[vi + a.ystride] == node(breaker("cityscape:road_white"))) then
+												data[vi] = node(breaker("cityscape:road_white"))
+											else
+												data[vi] = node(breaker("cityscape:road"))
+											end
 										end
-									end
-									for y1 = y + 1, maxp.y do
-										vi = vi + a.ystride
-										if data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
-											data[vi] = node("air")
+										for y1 = y + 1, maxp.y do
+											vi = vi + a.ystride
+											if data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
+												data[vi] = node("air")
+											end
 										end
 									end
 								end
 							end
+
+							local ivm = a:index(x, height, z)
+							data[ivm] = node(breaker("cityscape:road_white"))
+							write = true
 						end
-
-						local ivm = a:index(x, height, z)
-						data[ivm] = node(breaker("cityscape:road_white"))
-						write = true
-					--end
-
-				elseif q_data.city and (dx < 5 or dz < 5) then
+					elseif q_data.city and (dx < 5 or dz < 5) then
 						local height = q_data.alt
 						if dx < 5 then
 							local d = q_data.ramp_z - q_data.alt
