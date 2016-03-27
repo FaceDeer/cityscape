@@ -276,12 +276,12 @@ function cityscape.generate(minp, maxp, seed)
 					local highway = ((last_road_nx < 0 or last_road_nz < 0) and road_n > 0) or ((last_road_nx > 0 or last_road_nz > 0) and road_n < 0)
 					local clear = false
 					local city = q_data.city
+
 					local height = get_height(x, z, heightmap, csize, minp, maxp)
 					if math.abs(rivers[index]) < river_size then
 						height = get_elevation({x=x, z=z})
 					end
 					local y = math.max(height, 1)
-
 					if highway and y <= maxp.y and y >= minp.y then
 						for z1 = -4, 4 do
 							for x1 = -4, 4 do
@@ -289,13 +289,14 @@ function cityscape.generate(minp, maxp, seed)
 								if r2 <= 21 then
 									local vi = a:index(x + x1, y, z + z1)
 									if r2 <= 13 and data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
+										-- change '== node(breaker('
 										if (y > minp.y and data[vi - a.ystride] == node(breaker("cityscape:road_white"))) or (y < maxp.y and data[vi + a.ystride] == node(breaker("cityscape:road_white"))) then
 											data[vi] = node(breaker("cityscape:road_white"))
 										else
 											data[vi] = node(breaker("cityscape:road"))
 										end
 									end
-									for y1 = 1, maxp.y - y do
+									for y1 = y + 1, maxp.y do
 										vi = vi + a.ystride
 										if data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
 											data[vi] = node("air")
@@ -308,9 +309,9 @@ function cityscape.generate(minp, maxp, seed)
 						local ivm = a:index(x, height, z)
 						data[ivm] = node(breaker("cityscape:road_white"))
 						write = true
-					end
+					--end
 
-					if q_data.city and (dx < 5 or dz < 5) then
+				elseif q_data.city and (dx < 5 or dz < 5) then
 						local height = q_data.alt
 						if dx < 5 then
 							local d = q_data.ramp_z - q_data.alt
@@ -470,12 +471,11 @@ function cityscape.generate(minp, maxp, seed)
 				write = true
 			end
 			if q_data.city or q_data.road then
-				for y = maxp.y, minp.y, -1 do
-					for dz = 0, div_sz_z - 1 do
-						for dx = 0, div_sz_x - 1 do
+				for y = maxp.y + 1, minp.y - 1, -1 do
+					for dz = -1, div_sz_z do
+						for dx = -1, div_sz_x do
 							local x = minp.x + ((qx - 1) * div_sz_x) + dx
 							local z = minp.z + ((qz - 1) * div_sz_z) + dz
-							--local index = (z - minp.z) * csize.x + (x - minp.x) + 1
 							local ivm = a:index(x, y, z)
 							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_white") then
 								local sc = 0
