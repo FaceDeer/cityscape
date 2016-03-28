@@ -20,14 +20,15 @@ do
 	"cityscape:sidewalk_broken", "cityscape:sandstonebrick_broken",
 	"cityscape:stonebrick_broken", "cityscape:desert_stonebrick_broken",
 	"cityscape:floor_ceiling_broken", "cityscape:road", "cityscape:road_broken",
-	"cityscape:road_yellow_line", "cityscape:plate_glass", }
+	"cityscape:road_yellow_line", "cityscape:plate_glass",
+	"cityscape:road_white", }
 	for _, i in pairs(t) do
-		good_nodes[node(breaker(i))] = true
+		good_nodes[node(i)] = true
 	end
 
 	t = { "cityscape:concrete_broken", "cityscape:sidewalk_broken", }
 	for _, i in pairs(t) do
-		grassy[node(breaker(i))] = true
+		grassy[node(i)] = true
 	end
 end
 
@@ -327,9 +328,8 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									local r2 = (math.abs(x1)) ^ 2 + (math.abs(z1)) ^ 2
 									if r2 <= 21 then
 										local vi = a:index(x + x1, y, z + z1)
-										if r2 <= 13 and data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
-											-- change '== node(breaker('
-											if (y > minp.y and data[vi - a.ystride] == node(breaker("cityscape:road_white"))) or (y < maxp.y and data[vi + a.ystride] == node(breaker("cityscape:road_white"))) then
+										if r2 <= 13 and not good_nodes[data[vi]] then
+											if (y > minp.y and data[vi - a.ystride] == node("cityscape:road_white")) or (y < maxp.y and data[vi + a.ystride] == node("cityscape:road_white")) then
 												data[vi] = node(breaker("cityscape:road_white"))
 											else
 												data[vi] = node(breaker("cityscape:road"))
@@ -337,7 +337,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 										end
 										for y1 = y + 1, maxp.y do
 											vi = vi + a.ystride
-											if data[vi] ~= node(breaker("cityscape:road")) and data[vi] ~= node(breaker("cityscape:road_white")) then
+											if not good_nodes[data[vi]] then
 												data[vi] = node("air")
 											end
 										end
@@ -351,6 +351,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 						end
 					elseif q_data.city and (dx < streetw or dz < streetw) then
 						local height = q_data.alt
+						local manhole = (dx == math.floor(streetw / 2)) and (dz == math.floor(streetw / 2))
 						if dx < streetw then
 							local d = q_data.ramp_z - q_data.alt
 							local idz = div_sz_z - dz - 1
@@ -423,7 +424,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 
 							for y = height + 1, math.min(height + 20, maxp.y) do
 								ivm = ivm + a.ystride
-								if data[ivm] ~= node(breaker("cityscape:road")) then
+								if not good_nodes[data[vi]] then
 									data[ivm] = node("air")
 								end
 							end
@@ -534,13 +535,13 @@ function cityscape.generate(p_minp, p_maxp, seed)
 							local x = minp.x + ((qx - 1) * div_sz_x) + dx
 							local z = minp.z + ((qz - 1) * div_sz_z) + dz
 							local ivm = a:index(x, y, z)
-							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_white") or data[ivm] == node("cityscape:road_yellow_line") then
+							if data[ivm] == node("cityscape:road") or data[ivm] == node("cityscape:road_broken") or data[ivm] == node("cityscape:road_white") or data[ivm] == node("cityscape:road_yellow_line") then
 								local sc = 0
 								for sz = -1, 1 do
 									for sx = -1, 1 do
 										if sx ~= sz and (sx == 0 or sz == 0) then
 											local nivm = ivm + sz * a.zstride + sx
-											if (data[nivm - a.ystride] == node("cityscape:road") or data[nivm - a.ystride] == node("cityscape:road_white") or data[nivm - a.ystride] == node("cityscape:road_yellow_line")) and data[nivm] == node("air") then
+											if (data[nivm - a.ystride] == node("cityscape:road") or data[ivm] == node("cityscape:road_broken") or data[nivm - a.ystride] == node("cityscape:road_white") or data[nivm - a.ystride] == node("cityscape:road_yellow_line")) and data[nivm] == node("air") then
 												sc = sc + 1
 												if sc > 1 then
 													data[ivm] = node("stairs:slab_road")
@@ -561,8 +562,6 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									end
 								end
 							end
-
-							--ivm = ivm - a.ystride
 						end
 					end
 				end
