@@ -61,8 +61,11 @@ local get_elevation = cityscape.get_elevation
 
 local plot_buf = {}  -- passed to functions to build houses/buildings in
 local p2_buf = {}  -- passed to functions to store rotation data
+local data = {}
 local p2data = {}  -- vm rotation data buffer
 local schem_data = {}
+local vm, emin, emax, a, csize, heightmap, biomemap
+local div_sz_x, div_sz_z, minp, maxp
 
 
 local function clear_bd(plot_buf, plot_sz_x, dy, plot_sz_z)
@@ -81,14 +84,14 @@ local function clear_bd(plot_buf, plot_sz_x, dy, plot_sz_z)
 	end
 end
 
-local function get_height(x, z, heightmap, csize, minp, maxp)
+local function get_height(x, z)
 	local h
 	if x > maxp.x or x < minp.x or z > maxp.z or z < minp.z then
 		h = get_elevation({x=x, z=z})
 	else
 		h = heightmap[(z - minp.z) * csize.x + (x - minp.x) + 1]
 
-		if not h or h >= maxp.y or h <= minp.y then
+		if not h or h > maxp.y or h < minp.y then
 			h = get_elevation({x=x, z=z})
 		end
 	end
@@ -96,23 +99,65 @@ local function get_height(x, z, heightmap, csize, minp, maxp)
 	return h
 end
 
-function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
-	local div_sz_x = math.floor(csize.x / mx)
-	local div_sz_z = math.floor(csize.z / mz)
-	local i_road = csize.x + 4
+-- Once in a great while, the mapgen produces water where the
+-- original code says it shouldn't. I'm not sure why.
+function check_for_water(qx, qz, anchor)
+	local found_water = false
+	local ivm = a:index((qx - 1) * div_sz_x + minp.x, anchor, (qz - 1) * div_sz_z + minp.z)
+	for y = anchor, maxp.y do
+		if data[ivm] == node("default:river_water_source") then
+			anchor = y
+			found_water = true
+		end
+		ivm = ivm + a.ystride
+	end
+	if found_water then
+		anchor = anchor + 1
+	end
+
+	return anchor
+end
+
+function get_q_data(qx, qz, road_map)
+	if maxp.y < -100 or minp.y > 100 then
+		return {alt=nil, range=nil, ramp_x=nil, ramp_z=nil, max=nil, min=nil, highway=false, city=false, road=false}
+	end
+
+	local city = 0
+
+	local z1 = minp.z + ((qz - 1) * div_sz_z)
+	local z2 = minp.z + (qz * div_sz_z)
+	local x1 = minp.x + ((qx - 1) * div_sz_x)
+	local x2 = minp.x + (qx * div_sz_x)
+	for z = z1, z2 do
+		for x = x1, x2 do
+			local i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
+			local road_n = math.abs(road_map[i_road])
+
+			if road_n < 10 then
+				city = city + 1
+			end
+		end
+	end
+
+	-- If there's no construction here, bug out.
+	if city == 0 then
+		return {alt=nil, range=nil, ramp_x=nil, ramp_z=nil, max=nil, min=nil, highway=false, city=false, road=false}
+	end
+
 	local avg = 0
 	local avg_c = 0
 	local min = 31000
 	local max = -31000
-	local city = 0
 	local road_p = false
+
 	-- You can check for road by checking the noise sign at each corner.
 	-- If any are different, there's a road.
 	-- However, two parallel roads through the middle would defeat that.
 	-- Checking the middle of each side as well would reduce the odds a lot.
-	for z = minp.z + ((qz - 1) * div_sz_z), minp.z + (qz * div_sz_z) do
-		for x = minp.x + ((qx - 1) * div_sz_x), minp.x + (qx * div_sz_x) do
-			i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
+	for z = z1, z2 do
+		for x = x1, x2 do
+			local i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
 
 			local road_n = road_map[i_road]
 			local last_road_nx = road_map[i_road - 1]
@@ -123,11 +168,7 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 				road_p = true
 			end
 
-			if math.abs(road_n) < 10 then
-				city = city + 1
-			end
-
-			local height = get_height(x, z, heightmap, csize, minp, maxp)
+			local height = get_height(x, z)
 
 			if height > maxp.y or height < minp.y then
 				-- nop
@@ -153,8 +194,11 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	end
 
 	local anchor = get_elevation({x = (qx - 1) * div_sz_x + minp.x, z = (qz - 1) * div_sz_z + minp.z})
+	anchor = check_for_water(qx, qz, anchor)
 	local anchor_x = get_elevation({x = qx * div_sz_x + minp.x, z = (qz - 1) * div_sz_z + minp.z})
+	anchor_x = check_for_water(qx + 1, qz, anchor_x)
 	local anchor_z = get_elevation({x = (qx - 1) * div_sz_x + minp.x, z = qz * div_sz_z + minp.z})
+	anchor_z = check_for_water(qx, qz + 1, anchor_z)
 
 	local range = (math.max(math.abs(anchor - anchor_x), math.abs(anchor - anchor_z)))
 	if road_p or range > max_alt_range or anchor <= beach_level or anchor < minp.y or anchor > maxp.y - 20 then
@@ -164,7 +208,7 @@ function get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
 	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road}
 end
 
-local function place_schematic(a, data, pos, schem)
+local function place_schematic(pos, schem)
 	local yslice = {}
 	if schem.yslice_prob then
 		for _, ys in pairs(schem.yslice_prob) do
@@ -210,18 +254,19 @@ tree_biomes["coniferous_forest"] = {"conifer_trees"}
 tree_biomes["rainforest"] = {"jungle_trees"}
 
 
-function cityscape.generate(minp, maxp, seed)
-	local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
-	local data = vm:get_data()
+function cityscape.generate(p_minp, p_maxp, seed)
+	minp, maxp = p_minp, p_maxp
+	vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
+	vm:get_data(data)
 	p2data = vm:get_param2_data()
-	local a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
-	local csize = vector.add(vector.subtract(maxp, minp), 1)
-	local heightmap = minetest.get_mapgen_object("heightmap")
-	local biomemap = minetest.get_mapgen_object("biomemap")
+	a = VoxelArea:new({MinEdge = emin, MaxEdge = emax})
+	csize = vector.add(vector.subtract(maxp, minp), 1)
+	heightmap = minetest.get_mapgen_object("heightmap")
+	biomemap = minetest.get_mapgen_object("biomemap")
 
 	-- divide the block into this many buildings
-	local div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
-	local div_sz_z = math.floor(csize.z / mz)
+	div_sz_x = math.floor(csize.x / mx)  -- size of each division with streets
+	div_sz_z = math.floor(csize.z / mz)
 
 	local write = false
 
@@ -240,10 +285,7 @@ function cityscape.generate(minp, maxp, seed)
 
 	local road_map = minetest.get_perlin_map(noises[7], {x=csize.x + 2, y=csize.z + 2}):get2dMap_flat({x=minp.x - 1, y=minp.z - 1})
 	local rivers = minetest.get_perlin_map(noises[2], {x=csize.x, y=csize.z}):get2dMap_flat({x=minp.x, y=minp.z})
-	local road_n
-	local last_road_nx
-	local last_road_nz
-
+	local road_n, last_road_nx, last_road_nz
 	local suburb = false
 
 	local plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / (suburb and 2 or 1))
@@ -258,7 +300,7 @@ function cityscape.generate(minp, maxp, seed)
 	local index = 1
 	for qz = 1, mz do
 		for qx = 1, mx do
-			local q_data = get_q_data(qx, qz, minp, maxp, road_map, heightmap, csize)
+			local q_data = get_q_data(qx, qz, road_map)
 
 			for dz = 0, div_sz_z - 1 do
 				for dx = 0, div_sz_x - 1 do
@@ -273,7 +315,7 @@ function cityscape.generate(minp, maxp, seed)
 					local clear = false
 					local city = q_data.city
 
-					local height = get_height(x, z, heightmap, csize, minp, maxp)
+					local height = get_height(x, z)
 					if math.abs(rivers[index]) < river_size then
 						height = get_elevation({x=x, z=z})
 					end
@@ -396,20 +438,18 @@ function cityscape.generate(minp, maxp, seed)
 				i_road = i_road + 2
 			end
 
-			local height, range
-			if q_data then
-				height, range = q_data.alt, q_data.range
-			end
-
 			if q_data.city then
+				-- Create foundations.
+				local alt = q_data.alt
+
 				for dz = streetw, div_sz_z - 1 do
 					for dx = streetw, div_sz_x - 1 do
-						local floor = math.max(minp.y, height - 20)
+						local floor = math.max(minp.y, alt - 20)
 						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
-							if y == height then
+							if y == alt then
 								data[ivm] = node(breaker("cityscape:sidewalk"))
-							elseif y < height then
+							elseif y < alt then
 								data[ivm] = node("default:stone")
 							else
 								data[ivm] = node("air")
@@ -418,10 +458,8 @@ function cityscape.generate(minp, maxp, seed)
 						end
 					end
 				end
-			end
 
-			if q_data.city then
-				local alt = q_data.alt
+				-- Create buildings and houses.
 				for mir = 1, (suburb and 2 or 1) do
 					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
 
@@ -458,6 +496,8 @@ function cityscape.generate(minp, maxp, seed)
 					end
 				end
 			elseif not q_data.road then
+				-- Plant the missing trees in the untamed wilderness.
+				-- This is unbelievably slow.
 				local sx = minp.x + ((qx - 1) * div_sz_x) - 1
 				local sz = minp.z + ((qz - 1) * div_sz_z) - 1
 				for dz = 0, 35, 5 do
@@ -465,10 +505,10 @@ function cityscape.generate(minp, maxp, seed)
 						if math.random(2) == 1 then
 							local x = sx + dx + math.random(5)
 							local z = sz + dz + math.random(5)
-							local y = get_height(x, z, heightmap, csize, minp, maxp)
+							local y = get_height(x, z)
 							local ivm = a:index(x, y, z)
 							if data[ivm + a.ystride] == node("air") and (data[ivm] == node("default:dirt") or data[ivm] == node("default:dirt_with_grass") or data[ivm] == node("default:dirt_with_snow")) then
-								local index_2d = dz * csize.x + dx + 1
+								local index_2d = (z - minp.z) * csize.x + (x - minp.x) + 1
 								local biome = cityscape.biome_ids[biomemap[index_2d]]
 								if tree_biomes[biome] and y >= minp.y and y <= maxp.y then
 									local tree_type = tree_biomes[biome][math.random(#tree_biomes[biome])]
@@ -476,7 +516,7 @@ function cityscape.generate(minp, maxp, seed)
 									local pos = {x=x, y=y, z=z}
 									-- This is bull****. The schematic functions do not work.
 									-- Place them programmatically since the lua api is ****ed.
-									place_schematic(a, data, pos, schem)
+									place_schematic(pos, schem)
 								end
 							end
 						end
@@ -485,6 +525,8 @@ function cityscape.generate(minp, maxp, seed)
 
 				write = true
 			end
+
+			-- Look for steps in the road and add stairs.
 			if q_data.city or q_data.road then
 				for y = maxp.y + 1, minp.y - 1, -1 do
 					for dz = -1, div_sz_z do
@@ -536,4 +578,6 @@ function cityscape.generate(minp, maxp, seed)
 		vm:update_liquids()
 		vm:write_to_map()
 	end
+
+	vm, a, heightmap, biomemap = nil, nil, nil, nil
 end
