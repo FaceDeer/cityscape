@@ -186,13 +186,13 @@ function get_q_data(qx, qz, road_map)
 		end
 	end
 
-	if avg_c / div_sz_x / div_sz_z < 0.5 then
-		city_p = false
-	end
-
 	city = city / avg_c
 	local city_p = city > 0.5
 	local side_road = city > 0
+
+	if avg_c / div_sz_x / div_sz_z < 0.5 then
+		city_p = false
+	end
 
 	if avg_c > 0 then
 		avg = math.floor(avg / avg_c + 0.5)
@@ -449,7 +449,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									end
 								elseif y < height then
 									data[ivm] = node("default:stone")
-								elseif not good_nodes[data[vi]] then
+								elseif not good_nodes[data[ivm]] then
 									data[ivm] = node("air")
 								end
 								ivm = ivm + a.ystride
@@ -525,7 +525,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 
 				-- Place some cars.
 				for i = 1, math.random(3) + math.random(3) - 4 do
-					local x, z
+					local x, z, ivm
 
 					if math.random(2) == 1 then
 						x = minp.x + ((qx - 1) * div_sz_x) + (math.random(2) - 1) * math.floor(streetw / 2) + 1
@@ -543,6 +543,18 @@ function cityscape.generate(p_minp, p_maxp, seed)
 						data[ivm] = node("cityscape:car_broken")
 					else
 						data[ivm] = node("cityscape:car")
+					end
+				end
+
+				do
+					local x = minp.x + ((qx - 1) * div_sz_x) + streetw
+					local z = minp.z + ((qz - 1) * div_sz_z) + streetw
+					local ivm = a:index(x, q_data.alt + 1, z)
+
+					if cityscape.desolation > 0 then
+						data[ivm] = node("cityscape:streetlight_broken")
+					else
+						data[ivm] = node("cityscape:streetlight")
 					end
 				end
 			elseif not q_data.road then
