@@ -1,4 +1,5 @@
 minetest.register_alias("cityscape:manhole_cover", "doors:trapdoor_steel")
+minetest.register_alias("cityscape:sewer_water", "default:water_source")
 
 minetest.register_node("cityscape:plate_glass", {
 	description = "Plate Glass",

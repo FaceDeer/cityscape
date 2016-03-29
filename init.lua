@@ -27,12 +27,6 @@ if cityscape.suburbs < 0 or cityscape.suburbs > 10 then
 end
 
 
-minetest.register_on_mapgen_init(function(mgparams)
-	minetest.set_mapgen_params({mgname="valleys"})
-	minetest.setting_set("mg_valleys_lava_features", 0)
-	minetest.setting_set("mg_valleys_water_features", 0)
-end)
-
 -- Modify a node to add a group
 function minetest.add_group(node, groups)
 	local def = minetest.registered_items[node]

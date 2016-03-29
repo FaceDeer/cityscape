@@ -186,7 +186,11 @@ function get_q_data(qx, qz, road_map)
 		end
 	end
 
-	city = city / div_sz_x / div_sz_z
+	if avg_c / div_sz_x / div_sz_z < 0.5 then
+		city_p = false
+	end
+
+	city = city / avg_c
 	local city_p = city > 0.5
 	local side_road = city > 0
 
@@ -351,7 +355,6 @@ function cityscape.generate(p_minp, p_maxp, seed)
 						end
 					elseif q_data.city and (dx < streetw or dz < streetw) then
 						local height = q_data.alt
-						local manhole = (dx == math.floor(streetw / 2)) and (dz == math.floor(streetw / 2))
 						if dx < streetw then
 							local d = q_data.ramp_z - q_data.alt
 							local idz = div_sz_z - dz - 1
@@ -395,6 +398,26 @@ function cityscape.generate(p_minp, p_maxp, seed)
 								end
 								ivm = ivm + a.ystride
 							end
+
+							if height > minp.y + 10 then
+								local manhole = (dx == math.floor(streetw / 2)) and (dz == math.floor(streetw / 2))
+								local ivm = a:index(x, minp.y, z)
+								local top = manhole and height + 1 or minp.y + 3
+								for y = minp.y, top do
+									if manhole and y == height + 1 then
+										data[ivm] = node("cityscape:manhole_cover")
+									elseif manhole then
+										data[ivm] = node("default:ladder")
+										p2data[ivm] = 4
+									elseif y == minp.y then
+										data[ivm] = node("cityscape:sewer_water")
+									else
+										data[ivm] = node("air")
+									end
+
+									ivm = ivm + a.ystride
+								end
+							end
 						end
 
 						write = true
@@ -412,21 +435,24 @@ function cityscape.generate(p_minp, p_maxp, seed)
 							local street_center_x = (dx == math.floor(streetw / 2) and dz % 2 == 0) and not (dx < streetw and dz < streetw)
 							local street_center_z = (dz == math.floor(streetw / 2) and dx % 2 == 0) and not (dz < streetw and dx < streetw)
 
-							local ivm = a:index(x, height, z)
-							if street_center_x then
-								data[ivm] = node(breaker("cityscape:road_yellow_line"))
-							elseif street_center_z then
-								data[ivm] = node(breaker("cityscape:road_yellow_line"))
-								p2data[ivm] = 21
-							else
-								data[ivm] = node(breaker("cityscape:road"))
-							end
-
-							for y = height + 1, math.min(height + 20, maxp.y) do
-								ivm = ivm + a.ystride
-								if not good_nodes[data[vi]] then
+							local floor = math.max(minp.y - 15, height - 20)
+							local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
+							for y = floor, maxp.y do
+								if y == height then
+									if street_center_x then
+										data[ivm] = node(breaker("cityscape:road_yellow_line"))
+									elseif street_center_z then
+										data[ivm] = node(breaker("cityscape:road_yellow_line"))
+										p2data[ivm] = 21
+									else
+										data[ivm] = node(breaker("cityscape:road"))
+									end
+								elseif y < height then
+									data[ivm] = node("default:stone")
+								elseif not good_nodes[data[vi]] then
 									data[ivm] = node("air")
 								end
+								ivm = ivm + a.ystride
 							end
 						end
 
@@ -445,7 +471,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 
 				for dz = streetw, div_sz_z - 1 do
 					for dx = streetw, div_sz_x - 1 do
-						local floor = math.max(minp.y, alt - 20)
+						local floor = math.max(minp.y - 15, alt - 20)
 						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
 							if y == alt then
