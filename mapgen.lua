@@ -522,6 +522,29 @@ function cityscape.generate(p_minp, p_maxp, seed)
 						end
 					end
 				end
+
+				-- Place some cars.
+				for i = 1, math.random(3) + math.random(3) - 4 do
+					local x, z
+
+					if math.random(2) == 1 then
+						x = minp.x + ((qx - 1) * div_sz_x) + (math.random(2) - 1) * math.floor(streetw / 2) + 1
+						z = minp.z + ((qz - 1) * div_sz_z) + math.random(math.floor(div_sz_z * 0.75))
+						ivm = a:index(x, q_data.alt + 1, z)
+						p2data[ivm] = math.random(2) * 2 - 2
+					else
+						x = minp.x + ((qx - 1) * div_sz_x) + math.random(math.floor(div_sz_x * 0.75))
+						z = minp.z + ((qz - 1) * div_sz_z) + (math.random(2) - 1) * math.floor(streetw / 2) + 1
+						ivm = a:index(x, q_data.alt + 1, z)
+						p2data[ivm] = math.random(2) * 2 - 1
+					end
+
+					if cityscape.desolation > 0 then
+						data[ivm] = node("cityscape:car_broken")
+					else
+						data[ivm] = node("cityscape:car")
+					end
+				end
 			elseif not q_data.road then
 				-- Plant the missing trees in the untamed wilderness.
 				-- This is unbelievably slow.
