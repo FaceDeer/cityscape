@@ -187,11 +187,13 @@ function get_q_data(qx, qz, road_map)
 	end
 
 	city = city / avg_c
-	local city_p = city > 0.5
+	local city_p = city > 0.66
+	local suburb = not city_p and city > 0.33
 	local side_road = city > 0
 
 	if avg_c / div_sz_x / div_sz_z < 0.5 then
 		city_p = false
+		suburb = false
 	end
 
 	if avg_c > 0 then
@@ -208,12 +210,13 @@ function get_q_data(qx, qz, road_map)
 	local range = (math.max(math.abs(anchor - anchor_x), math.abs(anchor - anchor_z)))
 	if road_p or range > max_alt_range or anchor <= beach_level or anchor < minp.y or anchor > maxp.y - 20 then
 		city_p = false
+		suburb = false
 	end
 
-	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road}
+	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road, suburb=suburb}
 end
 
-local function place_schematic(pos, schem)
+local function place_schematic(pos, schem, center)
 	local yslice = {}
 	if schem.yslice_prob then
 		for _, ys in pairs(schem.yslice_prob) do
@@ -221,8 +224,10 @@ local function place_schematic(pos, schem)
 		end
 	end
 
-	pos.x = pos.x - math.floor(schem.size.x / 2)
-	pos.z = pos.z - math.floor(schem.size.z / 2)
+	if center then
+		pos.x = pos.x - math.floor(schem.size.x / 2)
+		pos.z = pos.z - math.floor(schem.size.z / 2)
+	end
 
 	for z = 0, schem.size.z - 1 do
 		for x = 0, schem.size.x - 1 do
@@ -231,9 +236,11 @@ local function place_schematic(pos, schem)
 			for y = 0, schem.size.y - 1 do
 				if yslice[y] or 255 >= math.random(255) then
 					local prob = schem.data[isch].prob or schem.data[isch].param1 or 255
-					if prob >= math.random(255) then
+					if prob >= math.random(255) and schem.data[isch].name ~= "air" then
 						data[ivm] = node(schem.data[isch].name)
 					end
+					local param2 = schem.data[isch].param2 or 0
+					p2data[ivm] = param2
 				end
 				ivm = ivm + a.ystride
 				isch = isch + schem.size.x
@@ -274,6 +281,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 	div_sz_z = math.floor(csize.z / mz)
 
 	local write = false
+	local houses = {{}, {}}
 
 	-- Deal with memory issues. This, of course, is supposed to be automatic.
 	local mem = math.floor(collectgarbage("count")/1024)
@@ -291,15 +299,10 @@ function cityscape.generate(p_minp, p_maxp, seed)
 	local road_map = minetest.get_perlin_map(noises[7], {x=csize.x + 2, y=csize.z + 2}):get2dMap_flat({x=minp.x - 1, y=minp.z - 1})
 	local rivers = minetest.get_perlin_map(noises[2], {x=csize.x, y=csize.z}):get2dMap_flat({x=minp.x, y=minp.z})
 	local road_n, last_road_nx, last_road_nz
-	local suburb = false
 
-	local plot_sz_x = math.floor((div_sz_x - streetw - sidewalk * 2) / (suburb and 2 or 1))
-	local plot_sz_z = math.floor((div_sz_z - streetw - sidewalk * 2) / (suburb and 4 or 1))
-	local rem_x = 0
-	local rem_z = 0
-
+	local plot_sz_x = div_sz_x - streetw - sidewalk * 2
+	local plot_sz_z = div_sz_z - streetw - sidewalk * 2
 	local p2, p2_ct  -- param2 (rotation) value and count
-	local mm  -- which direction to build houses so they face the street
 
 	local i_road = csize.x + 4
 	local index = 1
@@ -335,8 +338,10 @@ function cityscape.generate(p_minp, p_maxp, seed)
 										if r2 <= 13 and not good_nodes[data[vi]] then
 											if (y > minp.y and data[vi - a.ystride] == node("cityscape:road_white")) or (y < maxp.y and data[vi + a.ystride] == node("cityscape:road_white")) then
 												data[vi] = node(breaker("cityscape:road_white"))
+												p2data[vi] = 0
 											else
 												data[vi] = node(breaker("cityscape:road"))
+												p2data[vi] = 0
 											end
 										end
 										for y1 = y + 1, maxp.y do
@@ -351,9 +356,10 @@ function cityscape.generate(p_minp, p_maxp, seed)
 
 							local ivm = a:index(x, height, z)
 							data[ivm] = node(breaker("cityscape:road_white"))
+							p2data[ivm] = 0
 							write = true
 						end
-					elseif q_data.city and (dx < streetw or dz < streetw) then
+					elseif (q_data.city or q_data.suburb) and (dx < streetw or dz < streetw) then
 						local height = q_data.alt
 						if dx < streetw then
 							local d = q_data.ramp_z - q_data.alt
@@ -388,6 +394,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									data[ivm] = node("default:stone")
 								elseif y == height and height == q_data.alt and street_center_x then
 									data[ivm] = node(breaker("cityscape:road_yellow_line"))
+									p2data[ivm] = 0
 								elseif y == height and height == q_data.alt and street_center_z then
 									data[ivm] = node(breaker("cityscape:road_yellow_line"))
 									p2data[ivm] = 21
@@ -406,6 +413,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 								for y = minp.y, top do
 									if manhole and y == height + 1 then
 										data[ivm] = node("cityscape:manhole_cover")
+										p2data[ivm] = 0
 									elseif manhole then
 										data[ivm] = node("default:ladder")
 										p2data[ivm] = 4
@@ -441,6 +449,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 								if y == height then
 									if street_center_x then
 										data[ivm] = node(breaker("cityscape:road_yellow_line"))
+										p2data[ivm] = 0
 									elseif street_center_z then
 										data[ivm] = node(breaker("cityscape:road_yellow_line"))
 										p2data[ivm] = 21
@@ -465,21 +474,47 @@ function cityscape.generate(p_minp, p_maxp, seed)
 				i_road = i_road + 2
 			end
 
-			if q_data.city then
-				-- Create foundations.
+			if q_data.city or q_data.suburb then
 				local alt = q_data.alt
 
+				-- Clear the plot.
+				for iz = streetw, div_sz_z - 1 do
+					for ix = streetw, div_sz_x - 1 do
+						local ivm = a:index(minp.x + (qx - 1) * div_sz_x + ix, alt, minp.z + (qz - 1) * div_sz_z + iz)
+						for y = 0, (maxp.y - alt + 1) do
+							data[ivm] = node("air")
+							ivm = ivm + a.ystride
+						end
+					end
+				end
+
+				-- Create foundations.
 				for dz = streetw, div_sz_z - 1 do
 					for dx = streetw, div_sz_x - 1 do
 						local floor = math.max(minp.y - 15, alt - 20)
 						local ivm = a:index(((qx - 1) * div_sz_x) + dx + minp.x, floor, ((qz - 1) * div_sz_z) + dz + minp.z)
 						for y = floor, maxp.y do
-							if y == alt then
+							if q_data.suburb and (y == alt or y == alt - 1) and dx >= sidewalk + streetw and dx < div_sz_x - sidewalk and dz >= sidewalk + streetw and dz < div_sz_z - sidewalk then
+								if y == alt then
+									data[ivm] = node("default:dirt_with_grass")
+									p2data[ivm] = 0
+									if cityscape.desolation > 0 then
+										sr = math.random(14)
+										if sr < 6 then
+											data[ivm + a.ystride] = node("default:grass_"..sr)
+											p2data[ivm + a.ystride] = 0
+										elseif sr == 6 then
+											data[ivm + a.ystride] = node("default:dry_shrub")
+											p2data[ivm + a.ystride] = 0
+										end
+									end
+								else
+									data[ivm] = node("default:dirt")
+								end
+							elseif y == alt then
 								data[ivm] = node(breaker("cityscape:sidewalk"))
 							elseif y < alt then
 								data[ivm] = node("default:stone")
-							else
-								data[ivm] = node("air")
 							end
 							ivm = ivm + a.ystride
 						end
@@ -487,37 +522,44 @@ function cityscape.generate(p_minp, p_maxp, seed)
 				end
 
 				-- Create buildings and houses.
-				for mir = 1, (suburb and 2 or 1) do
-					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
-
-					if suburb then
-						p2_ct = cityscape.house(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z, mir)
-					else
-						p2_ct = cityscape.build(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z)
+				if cityscape.vacancies >= math.random(10) then
+					-- nop
+				elseif q_data.suburb then
+					local house = cityscape.house_schematics[math.random(#cityscape.house_schematics)]
+					house = minetest.decompress(house)
+					house = minetest.deserialize(house)
+					for i = 1, #house.data do
+						house.data[i].name = breaker(house.data[i].name)
 					end
 
+					local pos = {}
+					pos.x = minp.x + (qx - 1) * div_sz_x + (streetw + sidewalk)
+					pos.y = alt
+					pos.z = minp.z + (qz - 1) * div_sz_z + (streetw + sidewalk)
+					place_schematic(pos, house)
+				else
+					clear_bd(plot_buf, plot_sz_x, (maxp.y - alt + 2), plot_sz_z)
+					p2_ct = cityscape.build(plot_buf, p2_buf, plot_sz_x, maxp.y - alt, plot_sz_z)
+
+					-- Transfer the building data to the vm.
 					for iz = 0, plot_sz_z + 1 do
 						for ix = 0, plot_sz_x + 1 do
-							mm = 1
-							if mir == 2 then
-								mm = -1
-							end
-							local ivm = a:index(minp.x + (qx + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * ix) - 1, alt, minp.z + (qz - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + iz - 1)
+							local ivm = a:index(minp.x + (qx - 1) * div_sz_x + (streetw + sidewalk) + ix - 1, alt, minp.z + (qz - 1) * div_sz_z + (streetw + sidewalk) + iz - 1)
 							for y = 0, (maxp.y - alt + 1) do
 								if plot_buf[ix][y][iz] then
 									data[ivm] = plot_buf[ix][y][iz]
-								elseif y > 0 then
-									data[ivm] = node("air")
+									p2data[ivm] = 0
 								end
 								ivm = ivm + a.ystride
 							end
 						end
 					end
 
+					-- transfer rotation data
 					if p2_ct > 0 then
 						for i = 1, p2_ct do
 							p2 = p2_buf[i]
-							local ivm = a:index(minp.x + (qx + mir - 2) * div_sz_x + (2 - mir) * (streetw + sidewalk) + rem_x + (mm * p2[1]) - 1, alt + p2[2], minp.z + (qz - 1) * (suburb and plot_sz_z or div_sz_z) + streetw + sidewalk + rem_z + p2[3] - 1)
+							local ivm = a:index(minp.x + (qx - 1) * div_sz_x + (streetw + sidewalk) + p2[1] - 1, alt + p2[2], minp.z + (qz - 1) * div_sz_z + (streetw + sidewalk) + p2[3] - 1)
 							p2data[ivm] = p2[4]
 						end
 					end
@@ -553,8 +595,10 @@ function cityscape.generate(p_minp, p_maxp, seed)
 
 					if cityscape.desolation > 0 then
 						data[ivm] = node("cityscape:streetlight_broken")
+						p2data[ivm] = 0
 					else
 						data[ivm] = node("cityscape:streetlight")
+						p2data[ivm] = 0
 					end
 				end
 			elseif not q_data.road then
@@ -576,9 +620,8 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									local tree_type = tree_biomes[biome][math.random(#tree_biomes[biome])]
 									local schem = cityscape.schematics[tree_type][math.random(#cityscape.schematics[tree_type])]
 									local pos = {x=x, y=y, z=z}
-									-- This is bull****. The schematic functions do not work.
-									-- Place them programmatically since the lua api is ****ed.
-									place_schematic(pos, schem)
+									-- The minetest schematic functions don't seem very accurate.
+									place_schematic(pos, schem, true)
 								end
 							end
 						end
@@ -606,6 +649,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 												sc = sc + 1
 												if sc > 1 then
 													data[ivm] = node("stairs:slab_road")
+													p2data[ivm] = 0
 												else
 													data[ivm] = node("stairs:stair_road")
 													if sx == -1 then

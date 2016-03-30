@@ -373,7 +373,7 @@ local function park(data, param, dx, dy, dz)
 		for x = 1,dx do
 			data[x][0][z] = node("default:dirt_with_grass")
 			if cityscape.desolation > 0 then
-				sr = math.random(10)
+				sr = math.random(14)
 				if sr < 6 then
 					data[x][1][z] = node("default:grass_"..sr)
 				elseif sr == 6 then
@@ -409,10 +409,6 @@ end
 function cityscape.build(data, param, dx, dy, dz)
 	pcount = 0
 	local sr = math.random(13)
-
-	if math.random(10) <= cityscape.vacancies then
-		return 0
-	end
 
 	if sr <= 3 then
 		gotham(data, param, dx, dy, dz)
