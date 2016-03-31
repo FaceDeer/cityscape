@@ -21,9 +21,9 @@ cityscape.desolation = tonumber(minetest.setting_get('cityscape_desolation')) or
 if cityscape.desolation < 0 or cityscape.desolation > 10 then
 	cityscape.desolation = 0
 end
-cityscape.suburbs = tonumber(minetest.setting_get('cityscape_suburbs')) or 3
+cityscape.suburbs = tonumber(minetest.setting_get('cityscape_suburbs')) or 5
 if cityscape.suburbs < 0 or cityscape.suburbs > 10 then
-	cityscape.suburbs = 3
+	cityscape.suburbs = 5
 end
 
 
@@ -100,6 +100,8 @@ dofile(cityscape.path .. "/buildings.lua")
 dofile(cityscape.path .. "/houses.lua")
 dofile(cityscape.path .. "/molotov.lua")
 
+local unbroken = true
+local unbreak_this = "house_with_pool"
 cityscape.house_schematics = {}
 for _, filename in pairs(minetest.get_dir_list(cityscape.path.."/schematics/")) do
 	if string.find(filename, "^house_[%a%d_]+%.house$") then
@@ -108,6 +110,34 @@ for _, filename in pairs(minetest.get_dir_list(cityscape.path.."/schematics/")) 
 			local data = file:read("*all")
 			file:close()
 			cityscape.house_schematics[#cityscape.house_schematics+1] = data
+			print("loaded "..filename)
+			if not unbroken and string.find(filename, unbreak_this) then
+				local new_data = data
+				new_data = minetest.decompress(new_data)
+				new_data = minetest.deserialize(new_data)
+				for _, i in pairs(new_data.data) do
+					i.name = string.gsub(i.name, "_broken", "")
+					if string.find(i.name, "default:dry_shrub") then
+						i.name = "air"
+						i.prob = 0
+					end
+					if string.find(i.name, "default:grass") then
+						i.name = "air"
+						i.prob = 0
+					end
+				end
+				new_data = minetest.serialize(new_data)
+				new_data = minetest.compress(new_data)
+				cityscape.house_schematics[#cityscape.house_schematics] = new_data
+
+				filename = minetest.get_worldpath().."/"..unbreak_this..".house"
+				local file = io.open(filename, "wb")
+				if file then
+					file:write(new_data)
+					file:close()
+				end
+				unbroken = true
+			end
 		end
 	end
 end

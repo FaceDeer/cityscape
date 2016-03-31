@@ -22,4 +22,4 @@ cityscape_divisions_z (Divisions Z) int 3
 
 # If a suburb block can exist, this is the chance in ten
 # that it will be created.
-cityscape_suburbs (Suburbs) int 3
+cityscape_suburbs (Suburbs) int 5

@@ -7,6 +7,7 @@ local streetw = 5    -- street width
 local sidewalk = 2   -- sidewalk width
 local river_size = 5 / 100
 local beach_level = 5
+local city_range = 10  -- noise level to produce city in
 
 local good_nodes, grassy = {}, {}
 do
@@ -126,23 +127,11 @@ function get_q_data(qx, qz, road_map)
 
 	local city = 0
 
-	local z1 = minp.z + ((qz - 1) * div_sz_z)
-	local z2 = minp.z + (qz * div_sz_z)
-	local x1 = minp.x + ((qx - 1) * div_sz_x)
-	local x2 = minp.x + (qx * div_sz_x)
-	for z = z1, z2 do
-		for x = x1, x2 do
-			local i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
-			local road_n = math.abs(road_map[i_road])
-
-			if road_n < 10 then
-				city = city + 1
-			end
-		end
-	end
+	local i_road = math.floor(csize.z / 2) * (csize.x + 2) + math.floor(csize.x / 2) + 1
+	city = math.abs(road_map[i_road])
 
 	-- If there's no construction here, bug out.
-	if city == 0 then
+	if city > city_range then
 		return {alt=nil, range=nil, ramp_x=nil, ramp_z=nil, max=nil, min=nil, highway=false, city=false, road=false}
 	end
 
@@ -156,6 +145,10 @@ function get_q_data(qx, qz, road_map)
 	-- If any are different, there's a road.
 	-- However, two parallel roads through the middle would defeat that.
 	-- Checking the middle of each side as well would reduce the odds a lot.
+	local z1 = minp.z + ((qz - 1) * div_sz_z)
+	local z2 = minp.z + (qz * div_sz_z)
+	local x1 = minp.x + ((qx - 1) * div_sz_x)
+	local x2 = minp.x + (qx * div_sz_x)
 	for z = z1, z2 do
 		for x = x1, x2 do
 			local i_road = (z - minp.z + 1) * (csize.x + 2) + (x - minp.x + 1) + 1
@@ -186,10 +179,9 @@ function get_q_data(qx, qz, road_map)
 		end
 	end
 
-	city = city / avg_c
-	local city_p = city > 0.66
-	local suburb = not city_p and city > 0.33
-	local side_road = city > 0
+	local city_chance = (10 - cityscape.suburbs)
+	local city_p = city < city_chance
+	local suburb = not city_p
 
 	if avg_c / div_sz_x / div_sz_z < 0.5 then
 		city_p = false
@@ -213,7 +205,7 @@ function get_q_data(qx, qz, road_map)
 		suburb = false
 	end
 
-	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=side_road, suburb=suburb}
+	return {alt=anchor, range=range, ramp_x=anchor_x, ramp_z=anchor_z, max=max, min=min, highway=road_p, city=city_p, road=true, suburb=suburb}
 end
 
 local function place_schematic(pos, schem, center)
