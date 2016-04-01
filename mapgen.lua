@@ -491,7 +491,7 @@ function cityscape.generate(p_minp, p_maxp, seed)
 									data[ivm] = node("default:dirt_with_grass")
 									p2data[ivm] = 0
 									if cityscape.desolation > 0 then
-										sr = math.random(14)
+										local sr = math.random(14)
 										if sr < 6 then
 											data[ivm + a.ystride] = node("default:grass_"..sr)
 											p2data[ivm + a.ystride] = 0
@@ -601,8 +601,8 @@ function cityscape.generate(p_minp, p_maxp, seed)
 				for dz = 0, 35, 5 do
 					for dx = 0, 35, 5 do
 						if math.random(2) == 1 then
-							local x = sx + dx + math.random(5)
-							local z = sz + dz + math.random(5)
+							local x = sx + dx + math.random(5) - 1
+							local z = sz + dz + math.random(5) - 1
 							local y = get_height(x, z)
 							local ivm = a:index(x, y, z)
 							if data[ivm + a.ystride] == node("air") and (data[ivm] == node("default:dirt") or data[ivm] == node("default:dirt_with_grass") or data[ivm] == node("default:dirt_with_snow")) then
