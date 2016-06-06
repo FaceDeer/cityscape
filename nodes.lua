@@ -68,6 +68,12 @@ stairs.register_stair_and_slab("road", "cityscape:road",
 	"Tarmac",
 	default.node_sound_stone_defaults())
 
+newnode = cityscape.clone_node("stairs:stair_stone")
+newnode.description = "Concrete Stair"
+newnode.groups.flammable = 3
+newnode.drop = "stairs:stair_stone"
+minetest.register_node("cityscape:concrete_stair", newnode)
+	
 minetest.register_node("cityscape:concrete", {
 	description = "Concrete",
 	tiles = {"default_stone.png"},
@@ -244,7 +250,7 @@ minetest.register_node("cityscape:light_panel", {
 		fixed = {
 			{-0.5, -0.5, -0.5, 0.5, -0.48, 0.5},
 		} },
-	groups = {cracky = 3, level=1, oddly_breakable_by_hand = 1},
+	groups = {cracky = 3, level=1, oddly_breakable_by_hand = 1, flammable = 3},
 	on_place = minetest.rotate_and_place,
 	sounds = default.node_sound_stone_defaults(),
 })
