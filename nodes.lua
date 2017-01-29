@@ -73,7 +73,7 @@ newnode.description = "Concrete Stair"
 newnode.groups.flammable = 3
 newnode.drop = "stairs:stair_stone"
 minetest.register_node("cityscape:concrete_stair", newnode)
-	
+
 minetest.register_node("cityscape:concrete", {
 	description = "Concrete",
 	tiles = {"default_stone.png"},
