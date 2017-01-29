@@ -94,14 +94,14 @@ local function stairwell(data, param, pos1, pos2, left)
 
 	if left then
 		for i = 1,4 do
-			data[2 + px][i + py][2 + i + pz] = node("stairs:stair_stone")
+			data[2 + px][i + py][2 + i + pz] = node("cityscape:concrete_stair")
 		end
 		for i = 1,3 do
 			data[2 + px][4 + py][2 + i + pz] = node("air")
 		end
 	else
 		for i = 1,4 do
-			data[3 + px][i + py][7 - i + pz] = node("stairs:stair_stone")
+			data[3 + px][i + py][7 - i + pz] = node("cityscape:concrete_stair")
 			pstore(param, 3+px, i+py, 7-i+pz, 4)
 		end
 		for i = 1,3 do
